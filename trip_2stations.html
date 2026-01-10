@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>JR西日本ランダム経路</title>
+<title>JR西日本ランダム駅ルート</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <style>
@@ -10,12 +10,12 @@
 </style>
 </head>
 <body>
-<h2>JR西日本ランダム経路サンプル</h2>
+<h2>JR西日本ランダム駅ルート（路線沿い）</h2>
 <div id="map"></div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
-const map = L.map('map').setView([35, 135], 6);
+const map = L.map('map').setView([35.5, 135], 6);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
@@ -36,21 +36,24 @@ const joinURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/ma
 
         // line_cd -> company_cd
         const lineCompanyMap = {};
-        lineData.split('\n').slice(1).forEach(row => {
-            const cols = row.split(',').map(c => c.trim());
+        lineData.replace(/\r/g,'').split('\n').slice(1).forEach(row => {
+            if(!row) return;
+            const cols = row.split(',').map(c=>c.trim());
+            if(cols.length < 2) return;
             const line_cd = cols[0];
             const company_cd = parseInt(cols[1]);
+            if(isNaN(company_cd)) return;
             lineCompanyMap[line_cd] = company_cd;
         });
 
         // JR西日本駅のみ抽出
         const stationsMap = {};
-        stationData.replace(/\r/g,'').split('\n').slice(1).forEach(row => {
-            const cols = row.split(',').map(c => c.trim());
-            const code = cols[0];
-            const name = cols[2];
-            const lon = parseFloat(cols[9]);
-            const lat = parseFloat(cols[10]);
+        stationData.replace(/\r/g,'').split('\n').slice(1).forEach(row=>{
+            if(!row) return;
+            const cols = row.split(',').map(c=>c.trim());
+            if(cols.length < 11) return;
+            const code = cols[0], name = cols[2];
+            const lon = parseFloat(cols[9]), lat = parseFloat(cols[10]);
             const line_cd = cols[5];
             if(!code || !name || isNaN(lat) || isNaN(lon)) return;
             if(!lineCompanyMap[line_cd]) return;
@@ -61,42 +64,30 @@ const joinURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/ma
 
         // 隣接駅グラフ作成
         const graph = {};
-        joinData.replace(/\r/g,'').split('\n').slice(1).forEach(row => {
-            const cols = row.split(',').map(c => c.trim());
+        joinData.replace(/\r/g,'').split('\n').slice(1).forEach(row=>{
+            if(!row) return;
+            const cols = row.split(',').map(c=>c.trim());
+            if(cols.length < 3) return;
             const s1 = cols[1], s2 = cols[2];
             if(!stationsMap[s1] || !stationsMap[s2]) return;
-            if(!graph[s1]) graph[s1] = [];
-            if(!graph[s2]) graph[s2] = [];
+            if(!graph[s1]) graph[s1]=[];
+            if(!graph[s2]) graph[s2]=[];
             graph[s1].push(s2);
             graph[s2].push(s1);
         });
 
-        // 地図に分岐駅描画（見やすさ）
-        Object.keys(graph).forEach(code => {
-            if(graph[code].length >= 3){
-                const s = stationsMap[code];
-                L.circleMarker([s.lat, s.lon], {radius:5, color:'blue'}).addTo(map)
-                    .bindPopup(s.name);
-            }
+        // 地図に駅マーカー描画
+        Object.keys(stationsMap).forEach(code => {
+            const s = stationsMap[code];
+            L.circleMarker([s.lat, s.lon], {radius:3, color:'blue'}).addTo(map)
+                .bindPopup(s.name);
         });
 
-        const startStation = '1160308'; // 仮：最寄駅
-        const jrCodes = Object.keys(stationsMap).filter(c => c !== startStation);
-
-        // ランダムに3駅選択
-        function getRandomStations(codes, n){
-            const shuffled = codes.slice().sort(()=>0.5-Math.random());
-            return shuffled.slice(0,n);
-        }
-
-        const first3 = getRandomStations(jrCodes, 3);
-        const second3 = getRandomStations(jrCodes.filter(c=>!first3.includes(c)), 3);
-
-        // BFSで最短経路
-        function bfsPath(graph, start, goal){
+        // BFSで最短経路探索
+        function bfsPath(graph, start, goal) {
             const queue = [[start]];
             const visited = new Set([start]);
-            while(queue.length){
+            while(queue.length > 0){
                 const path = queue.shift();
                 const node = path[path.length-1];
                 if(node === goal) return path;
@@ -110,37 +101,47 @@ const joinURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/ma
             return null;
         }
 
-        // 複数駅を順番に結ぶ経路
-        function multiRoute(graph, stations){
-            const fullPath = [];
-            for(let i=0; i<stations.length-1; i++){
-                const path = bfsPath(graph, stations[i], stations[i+1]);
-                if(!path) return null;
-                if(i>0) path.shift(); // 先頭駅は重複させない
-                fullPath.push(...path);
-            }
-            return fullPath;
+        // ランダム駅をn個選ぶ
+        function pickRandomStations(stationsMap, n){
+            const keys = Object.keys(stationsMap);
+            const shuffled = keys.sort(()=>Math.random()-0.5);
+            return shuffled.slice(0,n);
         }
 
-        // 1回目：最寄駅 → first3
-        const firstRouteStations = [startStation, ...first3];
-        const firstRoute = multiRoute(graph, firstRouteStations);
+        // 最寄駅スタート
+        const startCode = '1160308'; // 例：最寄駅
 
-        // 2回目：firstRoute 最後の駅 → second3 → 最寄駅
-        const lastOfFirst = firstRoute[firstRoute.length-1];
-        const secondRouteStations = [lastOfFirst, ...second3, startStation];
-        const secondRoute = multiRoute(graph, secondRouteStations);
+        // 1回目のランダム3駅
+        let random3_1 = pickRandomStations(stationsMap, 3);
+        let route1 = [startCode];
+        random3_1.forEach(code=>{
+            const last = route1[route1.length-1];
+            const path = bfsPath(graph, last, code);
+            if(path) route1 = route1.concat(path.slice(1));
+        });
 
-        // 経路結合
-        const totalRoute = firstRoute.concat(secondRoute.slice(1));
+        // 2回目のランダム3駅（route1最後の駅スタート）
+        let random3_2 = pickRandomStations(stationsMap, 3);
+        let route2 = [route1[route1.length-1]];
+        random3_2.forEach(code=>{
+            const last = route2[route2.length-1];
+            const path = bfsPath(graph, last, code);
+            if(path) route2 = route2.concat(path.slice(1));
+        });
 
-        // 経路描画
-        const latlngs = totalRoute.map(c => [stationsMap[c].lat, stationsMap[c].lon]);
+        // 最後に最寄駅へ戻る
+        const pathBack = bfsPath(graph, route2[route2.length-1], startCode);
+        if(pathBack) route2 = route2.concat(pathBack.slice(1));
+
+        // 全経路
+        const fullRoute = route1.concat(route2.slice(1));
+
+        // 経路を地図に描画
+        const latlngs = fullRoute.map(code=>[stationsMap[code].lat, stationsMap[code].lon]);
         L.polyline(latlngs, {color:'red', weight:4}).addTo(map);
         map.fitBounds(latlngs);
 
-        // 経路表示
-        alert('経路完成: ' + totalRoute.map(c => stationsMap[c].name).join(' → '));
+        alert('ルート表示完了: ' + fullRoute.map(c=>stationsMap[c].name).join(' → '));
 
     } catch(err){
         console.error(err);
@@ -150,4 +151,3 @@ const joinURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/ma
 </script>
 </body>
 </html>
-
