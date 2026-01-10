@@ -2,18 +2,18 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>JR西日本巡回ルート（近似）</title>
+<title>JR西日本巡回ルート</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <style>
   #map { height: 70vh; width: 100%; }
-  #stationList { padding: 10px; font-size: 16px; }
+  #stationsList { padding: 10px; }
 </style>
 </head>
 <body>
-<h2>JR西日本巡回ルート（近似）</h2>
+<h2>JR西日本巡回ルート</h2>
+<div id="stationsList"></div>
 <div id="map"></div>
-<div id="stationList"><strong>巡回駅順:</strong> <span id="stationsText"></span></div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
@@ -24,99 +24,130 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 const lineURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station/line.csv';
 const stationURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station/station.csv';
+const joinURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station/join.csv';
 
 (async () => {
     try {
-        const [lineRes, stationRes] = await Promise.all([
-            fetch(lineURL), fetch(stationURL)
+        const [lineRes, stationRes, joinRes] = await Promise.all([
+            fetch(lineURL), fetch(stationURL), fetch(joinURL)
         ]);
         const lineData = await lineRes.text();
         const stationData = await stationRes.text();
+        const joinData = await joinRes.text();
 
         // line_cd -> company_cd
         const lineCompanyMap = {};
-        lineData.replace(/\r/g,'').split('\n').slice(1).forEach(row=>{
-            if(!row) return;
-            const cols = row.split(',').map(c=>c.trim());
-            const line_cd = cols[0];
-            const company_cd = parseInt(cols[1]);
-            if(isNaN(company_cd)) return;
+        lineData.split('\n').slice(1).forEach(r=>{
+            const c = r.split(',').map(x=>x.trim());
+            const line_cd = c[0];
+            const company_cd = parseInt(c[1]);
             lineCompanyMap[line_cd] = company_cd;
         });
 
-        // JR西日本駅のみ抽出
+        // JR西日本駅のみ抽出 (company_cd = 4)
         const stationsMap = {};
-        stationData.replace(/\r/g,'').split('\n').slice(1).forEach(row=>{
-            if(!row) return;
-            const cols = row.split(',').map(c=>c.trim());
-            if(cols.length < 11) return;
-            const code = cols[0], name = cols[2];
-            const lon = parseFloat(cols[9]), lat = parseFloat(cols[10]);
-            const line_cd = cols[5];
+        stationData.replace(/\r/g,'').split('\n').slice(1).forEach(r=>{
+            const c = r.split(',').map(x=>x.trim());
+            const code = c[0];
+            const name = c[2];
+            const lon = parseFloat(c[9]);
+            const lat = parseFloat(c[10]);
+            const line_cd = c[5];
             if(!code || !name || isNaN(lat) || isNaN(lon)) return;
-            if(!lineCompanyMap[line_cd]) return;
-            const company_cd = lineCompanyMap[line_cd];
-            if(company_cd !== 4) return; // JR西日本
+            if(lineCompanyMap[line_cd] !== 4) return; // JR西日本のみ
             stationsMap[code] = {name, lat, lon};
         });
 
-        const startCode = '1160308'; // 最寄駅
+        // 隣接駅グラフ作成
+        const graph = {};
+        joinData.replace(/\r/g,'').split('\n').slice(1).forEach(r=>{
+            const c = r.split(',').map(x=>x.trim());
+            const s1 = c[1], s2 = c[2];
+            if(!stationsMap[s1] || !stationsMap[s2]) return;
+            if(!graph[s1]) graph[s1] = [];
+            if(!graph[s2]) graph[s2] = [];
+            graph[s1].push(s2);
+            graph[s2].push(s1);
+        });
 
-        // ランダムに4駅選ぶ
-        function pickRandomStations(stationsMap, n, exclude=[]){
-            const keys = Object.keys(stationsMap).filter(k=>!exclude.includes(k));
-            const shuffled = keys.sort(()=>Math.random()-0.5);
-            return shuffled.slice(0,n);
-        }
-        const randomStations = pickRandomStations(stationsMap, 4, [startCode]);
-
-        // ---------------------------------------
-        // 貪欲法で巡回ルート決定
-        // ---------------------------------------
-        function distance(a, b){
-            const dx = a.lat - b.lat;
-            const dy = a.lon - b.lon;
-            return Math.sqrt(dx*dx + dy*dy);
-        }
-
-        const unvisited = [...randomStations];
-        const route = [startCode];
-        let current = startCode;
-        while(unvisited.length > 0){
-            let nearest = unvisited[0];
-            let minDist = distance(stationsMap[current], stationsMap[nearest]);
-            for(const u of unvisited){
-                const d = distance(stationsMap[current], stationsMap[u]);
-                if(d < minDist){
-                    nearest = u;
-                    minDist = d;
-                }
-            }
-            route.push(nearest);
-            current = nearest;
-            unvisited.splice(unvisited.indexOf(nearest), 1);
-        }
-        route.push(startCode); // 最寄駅に戻る
-
-        // ページに巡回駅順表示
-        const displayStations = route.map(code=>stationsMap[code].name);
-        document.getElementById('stationsText').textContent = displayStations.join(' → ');
-
-        // 地図にマーカー描画
-        route.forEach(code=>{
+        // 駅マーカー描画
+        Object.keys(stationsMap).forEach(code=>{
             const s = stationsMap[code];
-            L.circleMarker([s.lat, s.lon], {radius:4, color:'blue'}).addTo(map)
+            L.circleMarker([s.lat,s.lon],{radius:3,color:'blue'}).addTo(map)
                 .bindPopup(s.name);
         });
 
-        // 地図にルート描画（直線）
-        const latlngs = route.map(code=>[stationsMap[code].lat, stationsMap[code].lon]);
-        L.polyline(latlngs, {color:'red', weight:4}).addTo(map);
+        // -----------------------------
+        // ランダムで4駅選ぶ
+        // -----------------------------
+        const stationCodes = Object.keys(stationsMap);
+        const startCode = '1160308'; // 最寄駅
+        const available = stationCodes.filter(c=>c!==startCode);
+        function shuffle(arr){ return arr.sort(()=>Math.random()-0.5); }
+        const randomStations = shuffle(available).slice(0,4);
+
+        // ページに表示
+        document.getElementById('stationsList').innerHTML =
+            `最寄駅: ${stationsMap[startCode].name}<br>ランダム駅: ${randomStations.map(c=>stationsMap[c].name).join(' → ')}`;
+
+        // -----------------------------
+        // BFSで駅間最短経路を返す関数
+        // -----------------------------
+        function bfsPath(graph, start, goal){
+            const queue = [[start]];
+            const visited = new Set([start]);
+            while(queue.length>0){
+                const path = queue.shift();
+                const node = path[path.length-1];
+                if(node === goal) return path;
+                for(const n of graph[node]||[]){
+                    if(!visited.has(n)){
+                        visited.add(n);
+                        queue.push([...path,n]);
+                    }
+                }
+            }
+            return null;
+        }
+
+        // -----------------------------
+        // 最寄駅からランダム駅を回って戻るルート生成
+        // -----------------------------
+        let routeOrder = [startCode];
+        let current = startCode;
+        const remaining = [...randomStations];
+
+        while(remaining.length>0){
+            // 最短距離で次の駅を選択（貪欲）
+            let best = null;
+            let bestPath = null;
+            for(const next of remaining){
+                const path = bfsPath(graph,current,next);
+                if(path){
+                    if(!bestPath || path.length < bestPath.length){
+                        best = next;
+                        bestPath = path;
+                    }
+                }
+            }
+            if(!best) break; // 道がなければ終了
+            routeOrder = routeOrder.concat(bestPath.slice(1));
+            remaining.splice(remaining.indexOf(best),1);
+            current = best;
+        }
+
+        // 最後にスタートに戻る
+        const backPath = bfsPath(graph,current,startCode);
+        if(backPath) routeOrder = routeOrder.concat(backPath.slice(1));
+
+        // ルートを地図に表示
+        const latlngs = routeOrder.map(c=>[stationsMap[c].lat,stationsMap[c].lon]);
+        L.polyline(latlngs,{color:'red',weight:4}).addTo(map);
         map.fitBounds(latlngs);
 
     } catch(err){
         console.error(err);
-        alert('CSV読み込みまたは駅データ作成中にエラー発生');
+        alert('CSV読み込みまたは路線図作成中にエラー発生');
     }
 })();
 </script>
