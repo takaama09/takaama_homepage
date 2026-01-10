@@ -3,9 +3,55 @@
 <head>
   <meta charset="UTF-8">
   <title>たかあましゆんのページ</title>
+  <!-- スマホ対応 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { font-family: sans-serif; padding: 20px; background: #f9f9f9; }
-    h1 { color: #333; }
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      background: #f9f9f9;
+      margin: 0;
+    }
+
+    h1 {
+      color: #333;
+      font-size: 1.8em; /* スマホでも読みやすい */
+      margin-bottom: 20px;
+    }
+
+    p {
+      font-size: 1.1em;
+      line-height: 1.6;
+    }
+
+    a {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 10px 15px;
+      background-color: #007bff;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+      font-size: 1.2em;
+    }
+
+    a:hover {
+      background-color: #0056b3;
+    }
+
+    /* スマホ用調整 */
+    @media screen and (max-width: 600px) {
+      body {
+        padding: 15px;
+      }
+      h1 {
+        font-size: 1.5em;
+      }
+      a {
+        width: 100%; /* リンクを横幅いっぱいに */
+        text-align: center;
+      }
+    }
   </style>
 </head>
 <body>
@@ -14,3 +60,4 @@
   <a href="game.html">ゲームページへ</a>
 </body>
 </html>
+
