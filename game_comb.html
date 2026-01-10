@@ -107,6 +107,44 @@ function log(msg) {
   logDiv.textContent += msg + "\n";      // ①ログに文字を追加
   logDiv.scrollTop = logDiv.scrollHeight; // ②スクロールを一番下にする
 }
+// AIの出す手を決めるここではランダム。あとでAI関数に置き換える      
+function aiChooseHand() {
+return aiChoices[Math.floor(Math.random() * aiChoices.length)];
+    }
+      
+//ゲームの処理
+function playRound(player) {
+  if (player === "リタイア") {
+    log("あなたはリタイアしました！強制敗北です。");
+    aiPoints += 1;
+    playerRetired = true;
+    endGame();
+    return;
+  }
+
+  const ai = aiChooseHand();
+  log(`--- ターン ${turn} ---`);
+  log(`あなたの手: ${player}`);
+  log(`相手の手: ${ai}`);
+
+  const [result, playerPoint, aiPoint] = resultsTable[`${player},${ai}`];
+
+  if (result === "引き分け") {
+    log("引き分けです！ポイントは変わりません。");
+  } else if (result === "終了") {
+    log("両者自殺！ゲーム終了です！");
+    endGame();
+    return;
+  } else if (result === "player") {
+    playerPoints += playerPoint;
+    log(`自分のやりたいことができました！ポイントGET！得点: ${playerPoint}`);
+  } else if (result === "ai") {
+    aiPoints += aiPoint;
+    log(`相手にやられてしまいました！相手にポイントが入ります（；；）得点: ${aiPoint}`);
+  }
+
+  turn++;
+}
 
 </script>
 
