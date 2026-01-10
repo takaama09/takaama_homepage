@@ -101,10 +101,10 @@
       const resDiv = document.getElementById("result");
       if(player_retired || ai_points > player_points){
         resDiv.textContent = "最終勝利: 相手の勝ち！";
-        resDiv.style.color = "red";
+        resDiv.style.color = "blue";
       } else if(player_points > ai_points){
         resDiv.textContent = "最終勝利: あなたの勝ち！";
-        resDiv.style.color = "green";
+        resDiv.style.color = "red";
       } else {
         resDiv.textContent = "最終結果: 引き分け！";
         resDiv.style.color = "orange";
