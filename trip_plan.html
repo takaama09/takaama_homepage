@@ -23,9 +23,9 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(map);
 
 // CSVのURL（例: GitHub raw）
-const lineURL = 'line.csv';
-const stationURL = 'station.csv';
-const joinURL = 'join.csv';
+const lineURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/refs/heads/main/station/line.csv';
+const stationURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/refs/heads/main/station/station.csv';
+const joinURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/refs/heads/main/station/join.csv';
 
 document.getElementById('dartBtn').addEventListener('click', async () => {
     try {
