@@ -166,10 +166,10 @@ function resetGame() {
 
 function endGame(){
   const resDiv = document.getElementById("result");
-  if(player_retired || ai_points > player_points){
+  if(player_Retired || ai_Points > player_Points){
     resDiv.textContent = "最終勝利: 相手の勝ち！";
     resDiv.style.color = "red";
-  } else if(player_points > ai_points){
+  } else if(player_Points > ai_Points){
     resDiv.textContent = "最終勝利: あなたの勝ち！";
     resDiv.style.color = "green";
   } else {
