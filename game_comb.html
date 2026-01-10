@@ -165,6 +165,7 @@ function resetGame() {
 }
 
 function endGame(){
+　
   const resDiv = document.getElementById("result");
   if(playerRetired || aiPoints > playerPoints){
     resDiv.textContent = "最終勝利: 相手の勝ち！";
@@ -176,6 +177,9 @@ function endGame(){
     resDiv.textContent = "最終結果: 引き分け！";
     resDiv.style.color = "orange";
   }
+  // ボタンを無効化
+  buttonsDiv.innerHTML = "";
+　//通常非表示にしていたボタンが現れる
   document.getElementById("playAgain").style.display = "block";
   // ボタン押したらリセット
 document.getElementById("playAgain").onclick = () => resetGame();
