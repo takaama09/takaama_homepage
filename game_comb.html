@@ -42,29 +42,32 @@
     }
   </style>
 </head>
-<body>
+<body onload="checkPassword()">
 
 <script>
-    // 簡易パスワード認証
-    const PASSWORD = "1024102410240124";
+  const PASSWORD = "0000";
+
+  function checkPassword() {
     let attempts = 0;
-    function checkPassword() {
-      const input = prompt("ゲームページに入るにはパスワードを入力してください：");
-      attempts++;
+    let input = "";
+
+    while(attempts < 3) {
+      input = prompt("ゲームページに入るにはパスワードを入力してください：");
       if(input === PASSWORD) {
         alert("パスワード認証成功！");
-        return;
+        return; // 認証成功で処理終了
       } else {
-        alert("パスワードが違います。");
-        if(attempts >= 3) {
-          alert("3回間違えました。トップページに戻ります。");
-          window.location.href = "index.html";
-        } else {
-          checkPassword();
-        }
+        attempts++;
+        alert("パスワードが違います。残り回数：" + (3 - attempts));
       }
     }
+    // 3回間違えた場合
+    alert("3回間違えました。トップページに戻ります。");
+    window.location.href = "index.html";
+  }
 </script>
+<body onload="checkPassword()">
+
 
 </body>
 </html>
