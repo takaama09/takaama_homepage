@@ -1,1 +1,74 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>旅行系コンテンツ</title>
 
+  <!-- ビューポート設定: 画面幅に応じて拡大縮小 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    /* ------------------------
+       基本スタイル
+    ------------------------ */
+    body {
+      font-family: sans-serif; /* 読みやすいフォント */
+      padding: 20px;           /* 周囲に余白 */
+      margin: 0;               /* 余計な外枠を消す */
+      background: #f9f9f9;     /* 背景色 */
+      max-width: 100%;         /* はみ出し防止 */
+    }
+
+    /* コンテンツを中央に寄せるためのラッパー */
+    .container {
+      max-width: 800px;        /* PCでは最大幅800px */
+      margin: 0 auto;          /* 左右中央寄せ */
+      background: #fff;        /* コンテナ背景を白に */
+      padding: 20px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* 軽い影 */
+      border-radius: 10px;     /* 角丸 */
+    }
+
+    h1 {
+      color: #333;
+      font-size: 28px;
+      margin-bottom: 15px;
+    }
+
+    p {
+      font-size: 16px;
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+
+    a {
+      display: inline-block;  /* リンクをブロック状にしてクリックしやすく */
+      padding: 10px 15px;
+      margin: 5px 0;
+      background-color: #ffcc00;
+      color: #000;
+      text-decoration: none;
+      border-radius: 5px;
+      transition: background 0.3s;
+    }
+
+    a:hover {
+      background-color: #ffaa00;
+    }
+
+    /* ------------------------
+       スマホ向け調整（幅600px以下）
+    ------------------------ */
+    @media (max-width: 600px) {
+      h1 { font-size: 22px; }      /* 見出しを小さく */
+      p { font-size: 14px; }       /* 本文も小さく */
+      a { padding: 12px; font-size: 16px; } /* タップしやすく */
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- コンテンツを中央にまとめるラッパー -->
+  <div class="container">
+    <h1>楽しく旅行するためのコンテンツ・ツールを現在作成中です！</h1>
