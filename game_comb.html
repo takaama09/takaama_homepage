@@ -99,9 +99,15 @@
       "救出,盾": ["引き分け", 0, 0],
       "救出,救出": ["引き分け", 0, 0],
     };
-　　//ログ表示用&ボタン表示用の箱を操作するための変数
-    const logDiv = document.getElementById("log");
-    const buttonsDiv = document.getElementById("buttons");
+
+let playerPoints = 0;
+let aiPoints = 0;
+let turn = 1;
+let playerRetired = false;
+      
+//ログ表示用&ボタン表示用の箱を操作するための変数
+const logDiv = document.getElementById("log");
+const buttonsDiv = document.getElementById("buttons");
 
 function log(msg) {
   logDiv.textContent += msg + "\n";      // ①ログに文字を追加
