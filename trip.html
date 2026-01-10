@@ -29,7 +29,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 // CSVをGitHubから読み込み
 let stations = [];
-fetch('https://raw.githubusercontent.com/takaama09/takaama_homepage/refs/heads/main/station.csv')
+fetch('https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station.csv')
   .then(response => response.text())
   .then(data => {
       const rows = data.split('\n').slice(1); // ヘッダを除く
