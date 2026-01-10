@@ -152,21 +152,34 @@ function playRound(player) {
   turn++;
 }
 
-function endGame() {
-  log("\n--- ゲーム終了 ---");
-  log(`あなたのポイント: ${playerPoints}`);
-  log(`相手のポイント: ${aiPoints}`);
-  if (playerRetired) {
-    log("最終勝利: 相手の勝ち！あなたはリタイアしました。");
-  } else if (playerPoints > aiPoints) {
-    log("最終勝利: あなたの勝ち！おめでとう！");
-  } else if (playerPoints < aiPoints) {
-    log("最終勝利: 相手の勝ち！次は勝ちましょう！");
+function resetGame() {
+  playerPoints = 0;
+  aiPoints = 0;
+  turn = 1;
+  playerRetired = false;
+  logDiv.textContent = "";
+  // ボタン有効化
+  buttonsDiv.querySelectorAll("button").forEach(b => b.disabled = false);
+  document.getElementById("result").textContent = "";
+  document.getElementById("playAgain").style.display = "none";
+}
+
+function endGame(){
+  const resDiv = document.getElementById("result");
+  if(player_retired || ai_points > player_points){
+    resDiv.textContent = "最終勝利: 相手の勝ち！";
+    resDiv.style.color = "red";
+  } else if(player_points > ai_points){
+    resDiv.textContent = "最終勝利: あなたの勝ち！";
+    resDiv.style.color = "green";
   } else {
-    log("最終結果: 引き分けです！");
+    resDiv.textContent = "最終結果: 引き分け！";
+    resDiv.style.color = "orange";
   }
-  // ボタンを無効化
-  buttonsDiv.innerHTML = "";
+  document.getElementById("playAgain").style.display = "block";
+  // ボタン押したらページリロード
+document.getElementById("playAgain").onclick = () => resetGame();
+
 }
 
 //ボタンを動的に配置
