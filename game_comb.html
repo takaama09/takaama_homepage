@@ -3,69 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <title>自殺他殺ゲーム</title>
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-<style>
-    /* ページ全体 */
     body {
-        font-family: sans-serif;
-        padding: 5vw;           /* 画面幅に応じた余白 */
-        background: #f9f9f9;
-        text-align: center;      /* 中央揃えでスマホでも見やすく */
+      font-family: sans-serif;
+      padding: 20px;
+      background: #f0f0f0;
+      margin: 0;
     }
-
-    /* 見出し */
     h1 {
-        color: #333;
-        font-size: 8vw;          /* 画面幅に応じて文字サイズ調整 */
-        margin-bottom: 5vw;
+      text-align: center;
+      font-size: 1.8em;
+      margin-bottom: 20px;
     }
-
-    /* 結果表示用 */
-    #result {
-        font-size: 6vw;          /* スマホでも読みやすく */
-        font-weight: bold;
-        margin-top: 5vw;
+    #game {
+      max-width: 500px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
     }
-
-    /* もう一度プレイ用ボタン */
-    #playAgain {
-        margin-top: 5vw;
-        display: none;           /* 最初は非表示 */
-    }
-
-    /* ボタン全般 */
     button {
-        padding: 2vw 5vw;        /* 画面幅に応じて余白調整 */
-        font-size: 4vw;          /* 小さいスマホでも押しやすい */
-        cursor: pointer;         /* PCではマウスカーソルが指になる */
+      padding: 10px;
+      margin: 5px;
+      font-size: 1.2em;
+      border-radius: 5px;
+      cursor: pointer;
     }
-
-    /* パスワード入力欄 */
-    input[type="password"] {
-        padding: 2vw 4vw;
-        font-size: 4vw;
-        margin-top: 2vw;
-        margin-bottom: 2vw;
-        width: 80%;              /* スマホでも横幅いっぱいに */
-        max-width: 400px;        /* PCでは広がりすぎない */
-        box-sizing: border-box;  /* パディング込みで幅を計算 */
+    #log {
+      margin-top: 20px;
+      white-space: pre-line;
+      background: #eee;
+      padding: 10px;
+      border-radius: 5px;
+      max-height: 300px;
+      overflow-y: auto;
     }
-</style>
-
   </style>
 </head>
 <body>
-
-<h2>ゲームページにアクセスするにはパスワードが必要です</h2>
-
-<input type="password" id="password" placeholder="パスワード">
-<button onclick="checkPassword()">送信</button>
-
-<p id="message" style="color:red;"></p>
-
-<div id="content">
-    <h1>これはゲームページです</h1>
-</div>
 
 <script>
     // 簡易パスワード認証
