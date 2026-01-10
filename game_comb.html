@@ -177,7 +177,7 @@ function endGame(){
     resDiv.style.color = "orange";
   }
   document.getElementById("playAgain").style.display = "block";
-  // ボタン押したらページリロード
+  // ボタン押したらリセット
 document.getElementById("playAgain").onclick = () => resetGame();
 
 }
@@ -189,6 +189,9 @@ playerChoices.forEach(choice => {
   btn.onclick = () => playRound(choice);           // ③ボタンを押したときに playRound(choice) を実行
   buttonsDiv.appendChild(btn);                     // ④ボタンを #buttons の中に追加
 });
+      
+<div id="result"></div>
+<button id="playAgain">もう一度遊ぶ</button>
 </script>
 
 
