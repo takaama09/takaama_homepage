@@ -1,74 +1,65 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>旅行系コンテンツ</title>
-
-  <!-- ビューポート設定: 画面幅に応じて拡大縮小 -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
-  <style>
-    /* ------------------------
-       基本スタイル
-    ------------------------ */
-    body {
-      font-family: sans-serif; /* 読みやすいフォント */
-      padding: 20px;           /* 周囲に余白 */
-      margin: 0;               /* 余計な外枠を消す */
-      background: #f9f9f9;     /* 背景色 */
-      max-width: 100%;         /* はみ出し防止 */
-    }
-
-    /* コンテンツを中央に寄せるためのラッパー */
-    .container {
-      max-width: 800px;        /* PCでは最大幅800px */
-      margin: 0 auto;          /* 左右中央寄せ */
-      background: #fff;        /* コンテナ背景を白に */
-      padding: 20px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* 軽い影 */
-      border-radius: 10px;     /* 角丸 */
-    }
-
-    h1 {
-      color: #333;
-      font-size: 28px;
-      margin-bottom: 15px;
-    }
-
-    p {
-      font-size: 16px;
-      line-height: 1.5;
-      margin-bottom: 20px;
-    }
-
-    a {
-      display: inline-block;  /* リンクをブロック状にしてクリックしやすく */
-      padding: 10px 15px;
-      margin: 5px 0;
-      background-color: #ffcc00;
-      color: #000;
-      text-decoration: none;
-      border-radius: 5px;
-      transition: background 0.3s;
-    }
-
-    a:hover {
-      background-color: #ffaa00;
-    }
-
-    /* ------------------------
-       スマホ向け調整（幅600px以下）
-    ------------------------ */
-    @media (max-width: 600px) {
-      h1 { font-size: 22px; }      /* 見出しを小さく */
-      p { font-size: 14px; }       /* 本文も小さく */
-      a { padding: 12px; font-size: 16px; } /* タップしやすく */
-    }
-
-  </style>
+<meta charset="UTF-8">
+<title>ダーツで電車旅行先決定</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<style>
+  #map { height: 90vh; width: 100%; }
+  #dartBtn { padding: 10px 20px; font-size: 16px; margin: 10px; }
+</style>
 </head>
 <body>
+<h2>ダーツで電車旅行先を決めよう！</h2>
+<button id="dartBtn">ダーツを投げる</button>
+<div id="map"></div>
 
-  <!-- コンテンツを中央にまとめるラッパー -->
-  <div class="container">
-    <h1>楽しく旅行するためのコンテンツ・ツールを現在作成中です！</h1>
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+// 地図初期化（東京駅付近中心）
+const map = L.map('map').setView([35.681, 139.767], 5); 
+
+// OpenStreetMapタイル
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
+
+// CSVをGitHubから読み込み
+let stations = [];
+fetch('https://raw.githubusercontent.com/takaama_homepage/edit/main/stations.csv')
+  .then(response => response.text())
+  .then(data => {
+      const rows = data.split('\n').slice(1); // ヘッダを除く
+      stations = rows.map(row => {
+          const cols = row.split('\t'); // タブ区切り
+          return {
+              name: cols[2],       // station_name
+              lat: parseFloat(cols[11]),
+              lon: parseFloat(cols[10])
+          };
+      }).filter(s => !isNaN(s.lat) && !isNaN(s.lon));
+  });
+
+// ダーツボタン
+document.getElementById('dartBtn').addEventListener('click', () => {
+    if (stations.length === 0) {
+        alert('駅データを読み込んでいます。少し待ってください。');
+        return;
+    }
+    // ランダム駅を選択
+    const randomStation = stations[Math.floor(Math.random() * stations.length)];
+
+    // マーカー表示
+    L.marker([randomStation.lat, randomStation.lon])
+      .addTo(map)
+      .bindPopup(`<b>${randomStation.name}</b>`).openPopup();
+
+    // 地図を中心に移動
+    map.setView([randomStation.lat, randomStation.lon], 12);
+});
+</script>
+</body>
+</html>
