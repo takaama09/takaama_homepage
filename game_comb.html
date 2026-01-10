@@ -152,6 +152,23 @@ function playRound(player) {
   turn++;
 }
 
+function endGame() {
+  log("\n--- ゲーム終了 ---");
+  log(`あなたのポイント: ${playerPoints}`);
+  log(`相手のポイント: ${aiPoints}`);
+  if (playerRetired) {
+    log("最終勝利: 相手の勝ち！あなたはリタイアしました。");
+  } else if (playerPoints > aiPoints) {
+    log("最終勝利: あなたの勝ち！おめでとう！");
+  } else if (playerPoints < aiPoints) {
+    log("最終勝利: 相手の勝ち！次は勝ちましょう！");
+  } else {
+    log("最終結果: 引き分けです！");
+  }
+  // ボタンを無効化
+  buttonsDiv.innerHTML = "";
+}
+
 //ボタンを動的に配置
 playerChoices.forEach(choice => {
   const btn = document.createElement("button");   // ①ボタン要素を作る
