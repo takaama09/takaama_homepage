@@ -162,6 +162,7 @@ function resetGame() {
   buttonsDiv.querySelectorAll("button").forEach(b => b.disabled = false);
   document.getElementById("result").textContent = "";
   document.getElementById("playAgain").style.display = "none";
+　createButtons()
 }
 
 function endGame(){
@@ -183,7 +184,7 @@ function endGame(){
   document.getElementById("playAgain").style.display = "block";
   // ボタン押したらリセット
 document.getElementById("playAgain").onclick = () => resetGame();
-createButtons()
+
 }
 
 //ボタンを動的に配置
