@@ -46,6 +46,12 @@
       font-weight: bold;     /* 太字 */
       margin-top: 10px;      /* ログとの余白 */
     }
+      #playAgain {
+        display: none;      /* 初期状態は非表示 */
+        margin: 10px auto;  /* 上下10pxの余白、左右は自動で中央寄せ */
+        display: block;     /* JavaScriptで表示させるときにも中央寄せ */
+      }
+
   </style>
 </head>
 
@@ -178,10 +184,10 @@ function endGame(){
 　
   const resDiv = document.getElementById("result");
   if(playerRetired || aiPoints > playerPoints){
-    resDiv.textContent = "最終勝利: 相手の勝ち！";
+    resDiv.textContent = "最終結果: 残念！相手の勝ち！";
     resDiv.style.color = "red";
   } else if(playerPoints > aiPoints){
-    resDiv.textContent = "最終勝利: あなたの勝ち！";
+    resDiv.textContent = "最終結果: おめでとう！あなたの勝ち！";
     resDiv.style.color = "green";
   } else {
     resDiv.textContent = "最終結果: 引き分け！";
@@ -192,7 +198,7 @@ function endGame(){
 　//通常非表示にしていたボタンが現れる
   document.getElementById("playAgain").style.display = "block";
   // ボタン押したらリセット
-document.getElementById("playAgain").onclick = () => resetGame();
+　document.getElementById("playAgain").onclick = () => resetGame();
 
 }
 
