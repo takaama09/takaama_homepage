@@ -2,36 +2,50 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>最短巡回経路サンプル</title>
+<title>ランダム駅5点巡回経路</title>
 <style>
   body { font-family: sans-serif; }
   canvas { border: 1px solid #ccc; }
 </style>
 </head>
 <body>
-<h2>5点の最短巡回経路</h2>
-<canvas id="canvas" width="400" height="400"></canvas>
+<h2>ランダム駅5点巡回経路（100駅からランダム選択）</h2>
+<canvas id="canvas" width="600" height="600"></canvas>
 <script>
-// サンプルのグラフ（座標付き）
-const nodes = {
-  A: {x: 50, y: 50},
-  B: {x: 350, y: 50},
-  C: {x: 350, y: 350},
-  D: {x: 50, y: 350},
-  E: {x: 200, y: 200} // ランダムな中央駅
-};
+// ======= ランダム駅生成 =======
+const numStations = 100;
+const stations = [];
+for (let i=0; i<numStations; i++) {
+  stations.push({
+    name: 'S'+i,
+    x: Math.random()*550 + 25, // canvas内の座標
+    y: Math.random()*550 + 25
+  });
+}
 
-// 距離計算
-function distance(n1, n2) {
-  const dx = n1.x - n2.x;
-  const dy = n1.y - n2.y;
+// ======= 5点ランダム選択 =======
+function pickRandom(arr, n) {
+  const copy = arr.slice();
+  const picked = [];
+  for (let i=0; i<n; i++) {
+    const idx = Math.floor(Math.random() * copy.length);
+    picked.push(copy.splice(idx,1)[0]);
+  }
+  return picked;
+}
+
+const selected = pickRandom(stations, 5); 
+const start = selected[0]; // スタート固定
+const others = selected.slice(1);
+
+// ======= 距離計算 =======
+function distance(p1, p2) {
+  const dx = p1.x - p2.x;
+  const dy = p1.y - p2.y;
   return Math.sqrt(dx*dx + dy*dy);
 }
 
-// ノード名の配列
-const points = Object.keys(nodes);
-
-// 順列生成（再帰）
+// ======= 順列生成 =======
 function permute(arr) {
   if (arr.length <= 1) return [arr];
   let result = [];
@@ -42,10 +56,8 @@ function permute(arr) {
   return result;
 }
 
-// 最短巡回経路計算
-function shortestRoute(points) {
-  const start = points[0]; // スタート固定
-  const others = points.slice(1);
+// ======= 最短巡回計算 =======
+function shortestRoute(start, others) {
   const permutations = permute(others);
   let minDist = Infinity;
   let bestRoute = null;
@@ -54,7 +66,7 @@ function shortestRoute(points) {
     const route = [start, ...p, start];
     let dist = 0;
     for (let i=0; i<route.length-1; i++) {
-      dist += distance(nodes[route[i]], nodes[route[i+1]]);
+      dist += distance(route[i], route[i+1]);
     }
     if (dist < minDist) {
       minDist = dist;
@@ -64,35 +76,45 @@ function shortestRoute(points) {
   return {route: bestRoute, distance: minDist};
 }
 
-const result = shortestRoute(points);
+const result = shortestRoute(start, others);
 console.log(result);
 
-// 描画
+// ======= 描画 =======
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
-// ノード描画
-for (const [name, p] of Object.entries(nodes)) {
+// 全駅描画（小さく灰色）
+stations.forEach(s => {
+  ctx.fillStyle = 'lightgray';
+  ctx.beginPath();
+  ctx.arc(s.x, s.y, 3, 0, Math.PI*2);
+  ctx.fill();
+});
+
+// 選ばれた5駅を描画（青）
+selected.forEach(s => {
   ctx.fillStyle = 'blue';
   ctx.beginPath();
-  ctx.arc(p.x, p.y, 8, 0, Math.PI*2);
+  ctx.arc(s.x, s.y, 6, 0, Math.PI*2);
   ctx.fill();
   ctx.fillStyle = 'black';
-  ctx.fillText(name, p.x + 10, p.y + 5);
-}
+  ctx.fillText(s.name, s.x+8, s.y+4);
+});
 
-// 経路描画
+// 経路描画（赤線）
 ctx.strokeStyle = 'red';
 ctx.lineWidth = 2;
 ctx.beginPath();
-const routePoints = result.route.map(n => nodes[n]);
+const routePoints = result.route;
 ctx.moveTo(routePoints[0].x, routePoints[0].y);
 for (let i=1; i<routePoints.length; i++) {
   ctx.lineTo(routePoints[i].x, routePoints[i].y);
 }
 ctx.stroke();
 
-document.body.insertAdjacentHTML('beforeend', `<p>経路: ${result.route.join(' → ')}<br>距離: ${result.distance.toFixed(2)}</p>`);
+// 結果表示
+document.body.insertAdjacentHTML('beforeend', `<p>経路: ${result.route.map(s=>s.name).join(' → ')}<br>距離: ${result.distance.toFixed(2)}</p>`);
 </script>
 </body>
 </html>
+
