@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>自殺他殺ゲーム</title>
+    <title>たかあましゆんのゲームページ</title>
  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
@@ -42,7 +42,6 @@
     }
   </style>
 </head>
-<body onload="checkPassword()">
 
 <script>
   const PASSWORD = "0000";
@@ -66,7 +65,22 @@
     window.location.href = "index.html";
   }
 </script>
+    
 <body onload="checkPassword()">
+  <h1>自殺他殺ゲーム</h1>
+  <div id="game">
+    <div id="buttons"></div>
+    <div id="log"></div>
+  </div>
+
+<script>
+playerChoices.forEach(choice => {
+  const btn = document.createElement("button");   // ①ボタン要素を作る
+  btn.textContent = choice;                        // ②ボタンに文字を設定
+  btn.onclick = () => playRound(choice);           // ③ボタンを押したときに playRound(choice) を実行
+  buttonsDiv.appendChild(btn);                     // ④ボタンを #buttons の中に追加
+});
+</script>
 
 
 </body>
