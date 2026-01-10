@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>自殺他殺ゲーム</title>
+</head>
+<body>
+<h1>自殺他殺ゲーム</h1>
+
+<p>あなたの手を選んでください:</p>
+<div id="buttons"></div>
+
+<p id="status"></p>
+<p id="score"></p>
+
+<script>
+//--- ゲームデータ ---
+const playerChoices = ["自殺", "他殺", "盾", "救出", "リタイア"];
+const aiChoices = ["自殺", "他殺", "盾", "救出"];
+
+const resultsTable = {
+    "自殺,自殺": ["終了", 0, 0],
+    "自殺,他殺": ["引き分け", 0, 0],
+    "自殺,盾": ["player", 1, 0],
+    "自殺,救出": ["ai", 0, 1],
+    "他殺,自殺": ["引き分け", 0, 0],
+    "他殺,他殺": ["引き分け", 0, 0],
+    "他殺,盾": ["ai", 0, 1],
+    "他殺,救出": ["player", 1, 0],
+    "盾,自殺": ["player", 1, 0],
+    "盾,他殺": ["player", 1, 0],
+    "盾,盾": ["引き分け", 0, 0],
+    "盾,救出": ["引き分け", 0, 0],
+    "救出,自殺": ["ai", 0, 1],
+    "救出,他殺": ["ai", 0, 1],
+    "救出,盾": ["引き分け", 0, 0],
+    "救出,救出": ["引き分け", 0, 0],
+};
+
+//--- ゲーム状態 ---
+let playerPoints = 0;
+let aiPoints = 0;
+let turn = 1;
+let playerRetired = false;
+
+//--- AIロジック ---
+function aiExpectation() {
+    let bestScore = -Infinity;
+    let bestHands = [];
+    aiChoices.forEach(aiHand => {
+        let expected = 0;
+        ["自殺","他殺","盾","救出"].forEach(playerHand => {
+            let [result, playerPoint, aiPoint] = resultsTable[`${playerHand},${aiHand}`];
+            let score = 0;
+            if(result === "終了") {
+                score = aiPoints > playerPoints ? Infinity : aiPoints < playerPoints ? -Infinity : 0;
+            } else score = aiPoint - playerPoint;
+            expected += score / 4;
+        });
+        if(expected > bestScore) { bestScore = expected; bestHands = [aiHand]; }
+        else if(expected === bestScore) bestHands.push(aiHand);
+    });
+    return bestHands[Math.floor(Math.random() * bestHands.length)];
+}
+
+function aiBestPossible() {
+    let bestScore = -Infinity;
+    let bestHands = [];
+    aiChoices.forEach(aiHand => {
+        let maxScore = -Infinity;
+        ["自殺","他殺","盾","救出"].forEach(playerHand => {
+            let [result, playerPoint, aiPoint] = resultsTable[`${playerHand},${aiHand}`];
+            let score = 0;
+            if(result === "終了") score = aiPoints > playerPoints ? Infinity : aiPoints < playerPoints ? -Infinity : 0;
+            else score = aiPoint - playerPoint;
+            if(score > maxScore) maxScore = score;
+        });
+        if(maxScore > bestScore) { bestScore = maxScore; bestHands = [aiHand]; }
+        else if(maxScore === bestScore) bestHands.push(aiHand);
+    });
+    return bestHands[Math.floor(Math.random() * bestHands.length)];
+}
+
+function aiMinimax() {
+    let bestScore = -Infinity;
+    let bestHands = [];
+    aiChoices.forEach(aiHand => {
+        let worstScore = Infinity;
+        ["自殺","他殺","盾","救出"].forEach(playerHand => {
+            let [result, playerPoint, aiPoint] = resultsTable[`${playerHand},${aiHand}`];
+            let score = 0;
+            if(result === "終了") score = aiPoints > playerPoints ? Infinity : aiPoints < playerPoints ? -Infinity : 0;
+            else score = aiPoint - playerPoint;
+            if(score < worstScore) worstScore = score;
+        });
+        if(worstScore > bestScore) { bestScore = worstScore; bestHands = [aiHand]; }
+        else if(worstScore === bestScore) bestHands.push(aiHand);
+    });
+    return bestHands[Math.floor(Math.random() * bestHands.length)];
+}
+
+//--- ボタン作成 ---
+const buttonDiv = document.getElementById("buttons");
+playerChoices.forEach(choice => {
+    const btn = document.createElement("button");
+    btn.textContent = choice;
+    btn.onclick = () => playTurn(choice);
+    buttonDiv.appendChild(btn);
+});
+
+//--- ゲーム処理 ---
+function playTurn(player) {
+    if(player === "リタイア") {
+        playerRetired = true;
+        aiPoints += 1;
+        updateStatus(`あなたはリタイア！相手の勝ちです。`);
+        endGame();
+        return;
+    }
+
+    // 勝敗状況に応じてAIを切り替え
+    let ai;
+    if(playerPoints > aiPoints) ai = aiBestPossible();
+    else if(playerPoints < aiPoints) ai = aiMinimax();
+    else ai = aiExpectation();
+
+    const key = `${player},${ai}`;
+    const [result, playerPoint, aiPoint] = resultsTable[key];
+
+    if(result === "引き分け") updateStatus(`相手の手: ${ai} → 引き分け`);
+    else if(result === "終了") { updateStatus(`相手の手: ${ai} → 両者自殺！ゲーム終了`); endGame(); return; }
+    else if(result === "player") { playerPoints += playerPoint; updateStatus(`相手の手: ${ai} → あなたの勝ち！得点: ${playerPoint}`); }
+    else if(result === "ai") { aiPoints += aiPoint; updateStatus(`相手の手: ${ai} → 相手の勝ち！得点: ${aiPoint}`); }
+
+    turn++;
+    updateScore();
+}
+
+function updateStatus(msg) { document.getElementById("status").textContent = msg; }
+function updateScore() { document.getElementById("score").textContent = `あなた: ${playerPoints} / 相手: ${aiPoints}`; }
+
+function endGame() {
+    let finalMsg = "";
+    if(playerRetired) finalMsg = "最終勝利: 相手の勝ち！あなたはリタイアしました。";
+    else if(playerPoints > aiPoints) finalMsg = "最終勝利: あなたの勝ち！おめでとう！";
+    else if(playerPoints < aiPoints) finalMsg = "最終勝利: 相手の勝ち！";
+    else finalMsg = "最終結果: 引き分けです！";
+    updateStatus(finalMsg);
+}
+</script>
+</body>
+</html>
