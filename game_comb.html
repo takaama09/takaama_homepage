@@ -149,7 +149,7 @@ function playRound(player) {
 
   if (result === "引き分け") {
     log("引き分けです！ポイントは変わりません。");
-    log(`あなた ${playerPoint} - 相手 ${aiPoint}`);
+    log(`あなた ${playerPoints} - 相手 ${aiPoints}`);
   } else if (result === "終了") {
     log("両者自殺！ゲーム終了です！");
     endGame();
@@ -157,11 +157,11 @@ function playRound(player) {
   } else if (result === "player") {
     playerPoints += playerPoint;
     log(`自分のやりたいことができました！ポイントGET！`);
-    log(`あなた ${playerPoint} - 相手 ${aiPoint}`);
+    log(`あなた ${playerPoints} - 相手 ${aiPoints}`);
   } else if (result === "ai") {
     aiPoints += aiPoint;
     log(`相手にやられてしまいました！相手にポイントが入ります（；；）得点:`);
-    log(`あなた ${playerPoint} - 相手 ${aiPoint}`);
+    log(`あなた ${playerPoints} - 相手 ${aiPoints}`);
   }
 
   turn++;
