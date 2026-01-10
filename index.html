@@ -3,62 +3,88 @@
 <head>
   <meta charset="UTF-8">
   <title>たかあましゆんのページ</title>
-  <!-- スマホ対応 -->
+
+  <!-- ビューポート設定: 画面幅に応じて拡大縮小 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <style>
+    /* ------------------------
+       基本スタイル
+    ------------------------ */
     body {
-      font-family: sans-serif;
+      font-family: sans-serif; /* 読みやすいフォント */
+      padding: 20px;           /* 周囲に余白 */
+      margin: 0;               /* 余計な外枠を消す */
+      background: #f9f9f9;     /* 背景色 */
+      max-width: 100%;         /* はみ出し防止 */
+    }
+
+    /* コンテンツを中央に寄せるためのラッパー */
+    .container {
+      max-width: 800px;        /* PCでは最大幅800px */
+      margin: 0 auto;          /* 左右中央寄せ */
+      background: #fff;        /* コンテナ背景を白に */
       padding: 20px;
-      background: #f9f9f9;
-      margin: 0;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* 軽い影 */
+      border-radius: 10px;     /* 角丸 */
     }
 
     h1 {
       color: #333;
-      font-size: 1.8em; /* スマホでも読みやすい */
-      margin-bottom: 20px;
+      font-size: 28px;
+      margin-bottom: 15px;
     }
 
     p {
-      font-size: 1.1em;
-      line-height: 1.6;
+      font-size: 16px;
+      line-height: 1.5;
+      margin-bottom: 20px;
     }
 
     a {
-      display: inline-block;
-      margin-top: 20px;
+      display: inline-block;  /* リンクをブロック状にしてクリックしやすく */
       padding: 10px 15px;
-      background-color: #007bff;
-      color: white;
+      margin: 5px 0;
+      background-color: #ffcc00;
+      color: #000;
       text-decoration: none;
       border-radius: 5px;
-      font-size: 1.2em;
+      transition: background 0.3s;
     }
 
     a:hover {
-      background-color: #0056b3;
+      background-color: #ffaa00;
     }
 
-    /* スマホ用調整 */
-    @media screen and (max-width: 600px) {
-      body {
-        padding: 15px;
-      }
-      h1 {
-        font-size: 1.5em;
-      }
-      a {
-        width: 100%; /* リンクを横幅いっぱいに */
-        text-align: center;
-      }
+    /* ------------------------
+       スマホ向け調整（幅600px以下）
+    ------------------------ */
+    @media (max-width: 600px) {
+      h1 { font-size: 22px; }      /* 見出しを小さく */
+      p { font-size: 14px; }       /* 本文も小さく */
+      a { padding: 12px; font-size: 16px; } /* タップしやすく */
     }
+
   </style>
 </head>
 <body>
-  <h1>たかあましゆんのホームページ</h1>
-  <p>ここにプロフィールやゲームページへのリンクを追加します。</p>
-  <a href="game.html">ゲームページへ</a>
-  <a href="game_smartphone.html">スマホ版はこちら</a>
+
+  <!-- コンテンツを中央にまとめるラッパー -->
+  <div class="container">
+    <h1>たかあましゆんのホームページ</h1>
+
+    <!-- プロフィールなどの説明 -->
+    <p>ここにプロフィールやゲームページへのリンク、SNSへのリンクなどを追加します。<br>
+    スマホでも見やすく、PCでも見やすいデザインになっています。</p>
+
+    <!-- リンクの例 -->
+    <a href="game.html">ゲームページへ</a>
+    <a href="https://x.com/stakaama" target="_blank">X（旧Twitter）</a>
+    <a href="https://www.youtube.com/@takaama" target="_blank">YouTubeチャンネル</a>
+    <a href="https://tabelog.com/rvwr/018131802/" target="_blank">食べログ</a>
+  </div>
+
 </body>
 </html>
+
 
