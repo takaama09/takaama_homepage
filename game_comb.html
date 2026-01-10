@@ -183,16 +183,20 @@ function endGame(){
   document.getElementById("playAgain").style.display = "block";
   // ボタン押したらリセット
 document.getElementById("playAgain").onclick = () => resetGame();
-
+createButtons()
 }
 
 //ボタンを動的に配置
+function createButtons(){
 playerChoices.forEach(choice => {
   const btn = document.createElement("button");   // ①ボタン要素を作る
   btn.textContent = choice;                        // ②ボタンに文字を設定
   btn.onclick = () => playRound(choice);           // ③ボタンを押したときに playRound(choice) を実行
   buttonsDiv.appendChild(btn);                     // ④ボタンを #buttons の中に追加
 });
+}
+
+createButtons()
       
 
 </script>
