@@ -88,10 +88,10 @@
         return;
       } else if(result === "player") {
         player_points += player_point;
-        alert(`あなたの勝ち！得点: ${player_point}ポイント`);
+        alert(`あなたの勝ち！得点: あなた ${player_point} - コンピュータ ${ai_point} `);
       } else if(result === "ai") {
         ai_points += ai_point;
-        alert(`相手の勝ち！得点: ${ai_point}ポイント`);
+        alert(`相手の勝ち！得点: あなた ${player_point} - コンピュータ ${ai_point} `);
       }
 
       turn++;
