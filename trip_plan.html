@@ -20,10 +20,11 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
-// CSVのURL（例: GitHub raw）
-const lineURL = 'line.csv';
-const stationURL = 'station.csv';
-const joinURL = 'join.csv';
+// CSVのURL（例：GitHub rawなど）
+const lineURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/refs/heads/main/station/line.csv';
+const stationURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/refs/heads/main/station/station.csv';
+const joinURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/refs/heads/main/station/join.csv';
+
 
 (async () => {
     try {
