@@ -2,17 +2,57 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>ゲームページ</title>
-    <style>
-        body {
-            font-family: sans-serif;
-            text-align: center;
-            margin-top: 50px;
-        }
-        #content {
-            display: none;
-        }
-    </style>
+    <title>自殺他殺ゲーム</title>
+  <style>
+<style>
+    /* ページ全体 */
+    body {
+        font-family: sans-serif;
+        padding: 5vw;           /* 画面幅に応じた余白 */
+        background: #f9f9f9;
+        text-align: center;      /* 中央揃えでスマホでも見やすく */
+    }
+
+    /* 見出し */
+    h1 {
+        color: #333;
+        font-size: 8vw;          /* 画面幅に応じて文字サイズ調整 */
+        margin-bottom: 5vw;
+    }
+
+    /* 結果表示用 */
+    #result {
+        font-size: 6vw;          /* スマホでも読みやすく */
+        font-weight: bold;
+        margin-top: 5vw;
+    }
+
+    /* もう一度プレイ用ボタン */
+    #playAgain {
+        margin-top: 5vw;
+        display: none;           /* 最初は非表示 */
+    }
+
+    /* ボタン全般 */
+    button {
+        padding: 2vw 5vw;        /* 画面幅に応じて余白調整 */
+        font-size: 4vw;          /* 小さいスマホでも押しやすい */
+        cursor: pointer;         /* PCではマウスカーソルが指になる */
+    }
+
+    /* パスワード入力欄 */
+    input[type="password"] {
+        padding: 2vw 4vw;
+        font-size: 4vw;
+        margin-top: 2vw;
+        margin-bottom: 2vw;
+        width: 80%;              /* スマホでも横幅いっぱいに */
+        max-width: 400px;        /* PCでは広がりすぎない */
+        box-sizing: border-box;  /* パディング込みで幅を計算 */
+    }
+</style>
+
+  </style>
 </head>
 <body>
 
