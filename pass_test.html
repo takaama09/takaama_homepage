@@ -71,9 +71,10 @@
     }
     #keypad {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(3, 60px);
+      grid-template-rows: repeat(4, 60px);
       gap: 10px;
-      justify-items: center;
+      justify-content: center;
       margin-bottom: 10px;
     }
     #keypad button {
@@ -97,6 +98,12 @@
       margin-top: 10px;
       min-height: 1.2em;
     }
+    #attemptMessage {
+      color: blue;
+      font-weight: bold;
+      margin-top: 5px;
+      min-height: 1.2em;
+    }
   </style>
 </head>
 <body>
@@ -113,6 +120,7 @@
     <button id="clearBtn">Clear</button>
   </div>
   <p id="passwordMessage"></p>
+  <p id="attemptMessage"></p>
 </div>
 
 <!-- ゲーム本体 -->
@@ -125,18 +133,21 @@
 
 <script>
   // -------------------------
-  // テンキー式パスワード
+  // テンキー式パスワード（0は中央下）
   // -------------------------
   const PASSWORD = "0000";
   let input = "";
+  let attemptsLeft = 3;
 
   const passwordInput = document.getElementById("passwordInput");
   const passwordScreen = document.getElementById("passwordScreen");
   const gameDiv = document.getElementById("game");
   const passwordMessage = document.getElementById("passwordMessage");
+  const attemptMessage = document.getElementById("attemptMessage");
 
   const keypadDiv = document.getElementById("keypad");
-  // 1〜9のボタン
+
+  // 1〜9ボタン
   for (let i = 1; i <= 9; i++) {
     const btn = document.createElement("button");
     btn.textContent = i;
@@ -146,7 +157,10 @@
     };
     keypadDiv.appendChild(btn);
   }
-  // 0ボタン
+  // 空白（左下）
+  const emptyBtn1 = document.createElement("div");
+  keypadDiv.appendChild(emptyBtn1);
+  // 0ボタン（中央下）
   const zeroBtn = document.createElement("button");
   zeroBtn.textContent = 0;
   zeroBtn.onclick = () => {
@@ -154,6 +168,9 @@
     passwordInput.value = input;
   };
   keypadDiv.appendChild(zeroBtn);
+  // 空白（右下）
+  const emptyBtn2 = document.createElement("div");
+  keypadDiv.appendChild(emptyBtn2);
 
   document.getElementById("clearBtn").onclick = () => {
     input = "";
@@ -166,12 +183,21 @@
       passwordScreen.style.display = "none";
       gameDiv.style.display = "block";
     } else {
-      // 失敗メッセージを画面上に表示
+      attemptsLeft--;
       passwordMessage.textContent = "パスワードが違います！";
+      attemptMessage.textContent = `残り試行回数: ${attemptsLeft}`;
       input = "";
       passwordInput.value = "";
+      if (attemptsLeft <= 0) {
+        passwordMessage.textContent = "3回間違えました。トップページに戻ります。";
+        setTimeout(() => {
+          window.location.href = "index.html";
+        }, 1500);
+      }
     }
   };
+  // 初期表示
+  attemptMessage.textContent = `残り試行回数: ${attemptsLeft}`;
 
   // -------------------------
   // ゲームアルゴリズム
@@ -293,3 +319,4 @@
 
 </body>
 </html>
+
