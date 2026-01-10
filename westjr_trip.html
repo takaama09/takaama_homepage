@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>JR西日本ランダム巡回ルート（簡易）</title>
+<title>JR西日本巡回ルート（近似）</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <style>
@@ -11,7 +11,7 @@
 </style>
 </head>
 <body>
-<h2>JR西日本ランダム巡回ルート（簡易）</h2>
+<h2>JR西日本巡回ルート（近似）</h2>
 <div id="map"></div>
 <div id="stationList"><strong>巡回駅順:</strong> <span id="stationsText"></span></div>
 
@@ -60,24 +60,49 @@ const stationURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage
             stationsMap[code] = {name, lat, lon};
         });
 
-        // ランダムに駅を選ぶ関数
+        const startCode = '1160308'; // 最寄駅
+
+        // ランダムに4駅選ぶ
         function pickRandomStations(stationsMap, n, exclude=[]){
             const keys = Object.keys(stationsMap).filter(k=>!exclude.includes(k));
             const shuffled = keys.sort(()=>Math.random()-0.5);
             return shuffled.slice(0,n);
         }
-
-        const startCode = '1160308'; // 最寄駅
         const randomStations = pickRandomStations(stationsMap, 4, [startCode]);
 
-        // 巡回ルート（最寄駅→ランダム駅4つ→最寄駅に戻る）
-        const route = [startCode, ...randomStations, startCode];
+        // ---------------------------------------
+        // 貪欲法で巡回ルート決定
+        // ---------------------------------------
+        function distance(a, b){
+            const dx = a.lat - b.lat;
+            const dy = a.lon - b.lon;
+            return Math.sqrt(dx*dx + dy*dy);
+        }
 
-        // HTMLに表示
+        const unvisited = [...randomStations];
+        const route = [startCode];
+        let current = startCode;
+        while(unvisited.length > 0){
+            let nearest = unvisited[0];
+            let minDist = distance(stationsMap[current], stationsMap[nearest]);
+            for(const u of unvisited){
+                const d = distance(stationsMap[current], stationsMap[u]);
+                if(d < minDist){
+                    nearest = u;
+                    minDist = d;
+                }
+            }
+            route.push(nearest);
+            current = nearest;
+            unvisited.splice(unvisited.indexOf(nearest), 1);
+        }
+        route.push(startCode); // 最寄駅に戻る
+
+        // ページに巡回駅順表示
         const displayStations = route.map(code=>stationsMap[code].name);
         document.getElementById('stationsText').textContent = displayStations.join(' → ');
 
-        // 地図にマーカー
+        // 地図にマーカー描画
         route.forEach(code=>{
             const s = stationsMap[code];
             L.circleMarker([s.lat, s.lon], {radius:4, color:'blue'}).addTo(map)
