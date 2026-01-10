@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>最短巡回経路サンプル</title>
+<style>
+  body { font-family: sans-serif; }
+  canvas { border: 1px solid #ccc; }
+</style>
+</head>
+<body>
+<h2>5点の最短巡回経路</h2>
+<canvas id="canvas" width="400" height="400"></canvas>
+<script>
+// サンプルのグラフ（座標付き）
+const nodes = {
+  A: {x: 50, y: 50},
+  B: {x: 350, y: 50},
+  C: {x: 350, y: 350},
+  D: {x: 50, y: 350},
+  E: {x: 200, y: 200} // ランダムな中央駅
+};
+
+// 距離計算
+function distance(n1, n2) {
+  const dx = n1.x - n2.x;
+  const dy = n1.y - n2.y;
+  return Math.sqrt(dx*dx + dy*dy);
+}
+
+// ノード名の配列
+const points = Object.keys(nodes);
+
+// 順列生成（再帰）
+function permute(arr) {
+  if (arr.length <= 1) return [arr];
+  let result = [];
+  for (let i=0; i<arr.length; i++) {
+    const rest = permute(arr.slice(0,i).concat(arr.slice(i+1)));
+    rest.forEach(r => result.push([arr[i], ...r]));
+  }
+  return result;
+}
+
+// 最短巡回経路計算
+function shortestRoute(points) {
+  const start = points[0]; // スタート固定
+  const others = points.slice(1);
+  const permutations = permute(others);
+  let minDist = Infinity;
+  let bestRoute = null;
+
+  permutations.forEach(p => {
+    const route = [start, ...p, start];
+    let dist = 0;
+    for (let i=0; i<route.length-1; i++) {
+      dist += distance(nodes[route[i]], nodes[route[i+1]]);
+    }
+    if (dist < minDist) {
+      minDist = dist;
+      bestRoute = route;
+    }
+  });
+  return {route: bestRoute, distance: minDist};
+}
+
+const result = shortestRoute(points);
+console.log(result);
+
+// 描画
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+// ノード描画
+for (const [name, p] of Object.entries(nodes)) {
+  ctx.fillStyle = 'blue';
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, 8, 0, Math.PI*2);
+  ctx.fill();
+  ctx.fillStyle = 'black';
+  ctx.fillText(name, p.x + 10, p.y + 5);
+}
+
+// 経路描画
+ctx.strokeStyle = 'red';
+ctx.lineWidth = 2;
+ctx.beginPath();
+const routePoints = result.route.map(n => nodes[n]);
+ctx.moveTo(routePoints[0].x, routePoints[0].y);
+for (let i=1; i<routePoints.length; i++) {
+  ctx.lineTo(routePoints[i].x, routePoints[i].y);
+}
+ctx.stroke();
+
+document.body.insertAdjacentHTML('beforeend', `<p>経路: ${result.route.join(' → ')}<br>距離: ${result.distance.toFixed(2)}</p>`);
+</script>
+</body>
+</html>
