@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>ダーツでJR10駅ランダムルート</title>
+<title>JR駅10駅ランダムルート（路線図沿い）</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <style>
@@ -11,26 +11,24 @@
 </style>
 </head>
 <body>
-<h2>ダーツでJR10駅ランダムルートを決めよう！</h2>
+<h2>JR駅10駅ランダムルート（路線図に沿って移動）</h2>
 <button id="dartBtn">ルート作成</button>
 <div id="map"></div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
-// Leaflet地図初期化（日本全体）
 const map = L.map('map').setView([36, 138], 5);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
-// CSVのURL（例：GitHub rawなど）
-const lineURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/refs/heads/main/station/line.csv';
-const stationURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/refs/heads/main/station/station.csv';
-const joinURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/refs/heads/main/station/join.csv';
+// CSVのURL（例: GitHub raw）
+const lineURL = 'line.csv';
+const stationURL = 'station.csv';
+const joinURL = 'join.csv';
 
 document.getElementById('dartBtn').addEventListener('click', async () => {
     try {
-        // CSV読み込み
         const [lineRes, stationRes, joinRes] = await Promise.all([
             fetch(lineURL), fetch(stationURL), fetch(joinURL)
         ]);
@@ -58,19 +56,19 @@ document.getElementById('dartBtn').addEventListener('click', async () => {
             const line_cd = cols[5];
 
             if (!code || !name || isNaN(lat) || isNaN(lon)) return;
-            if (!lineCompanyMap[line_cd]) return;  // line_cdがlineファイルにない場合スキップ
+            if (!lineCompanyMap[line_cd]) return;
             const company_cd = lineCompanyMap[line_cd];
-            if (company_cd < 1 || company_cd > 6) return; // JR以外はスキップ
+            if (company_cd < 1 || company_cd > 6) return;
 
             stationsMap[code] = {name, lat, lon};
         });
 
-        // グラフ作成（隣接駅）
+        // 隣接駅グラフ作成
         const graph = {};
         joinData.split('\n').slice(1).forEach(row => {
             const cols = row.split(',').map(c => c.trim());
             const s1 = cols[1], s2 = cols[2];
-            if (!stationsMap[s1] || !stationsMap[s2]) return; // JR駅のみ
+            if (!stationsMap[s1] || !stationsMap[s2]) return;
             if (!graph[s1]) graph[s1] = [];
             if (!graph[s2]) graph[s2] = [];
             graph[s1].push(s2);
@@ -87,8 +85,8 @@ document.getElementById('dartBtn').addEventListener('click', async () => {
         const shuffled = stationCodes.sort(() => 0.5 - Math.random());
         const selected = shuffled.slice(0, 10);
 
-        // ルート探索（簡易版: 隣接駅BFSで順番決定）
-        function findRoute(graph, selected) {
+        // 路線図沿いルート計算（簡易BFS）
+        function routeAlongGraph(graph, selected) {
             const visited = new Set();
             const route = [];
             let current = selected[0];
@@ -96,9 +94,8 @@ document.getElementById('dartBtn').addEventListener('click', async () => {
             route.push(current);
 
             while (visited.size < selected.length) {
-                // currentから行けるまだ回っていない駅を探す
                 const next = selected.find(s => !visited.has(s) && graph[current]?.includes(s));
-                if (!next) break; // つながりがない場合
+                if (!next) break;
                 route.push(next);
                 visited.add(next);
                 current = next;
@@ -108,22 +105,21 @@ document.getElementById('dartBtn').addEventListener('click', async () => {
             return route;
         }
 
-        const route = findRoute(graph, selected);
+        const route = routeAlongGraph(graph, selected);
 
-        // 地図上にマーカーとルート表示
+        // 地図にマーカーとルート表示
         const latlngs = [];
         route.forEach(code => {
             const s = stationsMap[code];
             if (!s) return;
             latlngs.push([s.lat, s.lon]);
-            L.marker([s.lat, s.lon]).addTo(map)
-              .bindPopup(s.name);
+            L.marker([s.lat, s.lon]).addTo(map).bindPopup(s.name);
         });
 
         L.polyline(latlngs, {color:'red'}).addTo(map);
         if(latlngs.length>0) map.fitBounds(latlngs);
 
-        alert('JR10駅ルート完成！駅をクリックして名前確認できます');
+        alert('JR10駅ルート生成完了！駅をクリックして名前確認できます');
 
     } catch (err) {
         console.error(err);
@@ -133,3 +129,4 @@ document.getElementById('dartBtn').addEventListener('click', async () => {
 </script>
 </body>
 </html>
+
