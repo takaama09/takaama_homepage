@@ -196,7 +196,8 @@
   document.getElementById("enterBtn").onclick = () => {
     if (input === PASSWORD) {
       passwordScreen.style.display = "none";
-      gameDiv.style.display = "block";
+      gameDiv.style.display = "block";  
+  　　createButtons();
     } else {
       attemptsLeft--;
       passwordMessage.textContent = "パスワードが違います！";
@@ -329,7 +330,6 @@
     });
   }
 
-  createButtons();
 </script>
 
 </body>
