@@ -2,9 +2,8 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>ダーツで電車旅行先決定</title>
+<title>ダーツで電車旅行先決定（Full CSV Lazy Load）</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- Leaflet CSS -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <style>
   #map { height: 90vh; width: 100%; }
@@ -16,40 +15,34 @@
 <button id="dartBtn">ダーツを投げる</button>
 <div id="map"></div>
 
-<!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
-// 地図初期化（東京駅付近中心）
-const map = L.map('map').setView([35.681, 139.767], 5); 
-
-// OpenStreetMapタイル
+const map = L.map('map').setView([35.681, 139.767], 5);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
-// CSVをGitHubから読み込み
-let stations = [];
-fetch('https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station.csv')
-  .then(response => response.text())
-  .then(data => {
-      const rows = data.split('\n').slice(1); // ヘッダを除く
-      stations = rows.map(row => {
-          const cols = row.split('\t'); // タブ区切り
-          return {
-              name: cols[2],       // station_name
-              lat: parseFloat(cols[11]),
-              lon: parseFloat(cols[10])
-          };
-      }).filter(s => !isNaN(s.lat) && !isNaN(s.lon));
-  });
+// CSV URL（raw形式）
+const csvURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station.csv';
 
 // ダーツボタン
-document.getElementById('dartBtn').addEventListener('click', () => {
-    if (stations.length === 0) {
-        alert('駅データを読み込んでいます。少し待ってください。');
-        return;
-    }
-    // ランダム駅を選択
+document.getElementById('dartBtn').addEventListener('click', async () => {
+    // クリック時にCSVを読み込む（遅延読み込み）
+    const response = await fetch(csvURL);
+    const data = await response.text();
+
+    // ヘッダ除去
+    const rows = data.split('\n').slice(1);
+    const stations = rows.map(row => {
+        const cols = row.split('\t'); // タブ区切り
+        return {
+            name: cols[2],       // station_name
+            lat: parseFloat(cols[11]),
+            lon: parseFloat(cols[10])
+        };
+    }).filter(s => !isNaN(s.lat) && !isNaN(s.lon));
+
+    // ランダム駅を選ぶ
     const randomStation = stations[Math.floor(Math.random() * stations.length)];
 
     // マーカー表示
@@ -57,7 +50,7 @@ document.getElementById('dartBtn').addEventListener('click', () => {
       .addTo(map)
       .bindPopup(`<b>${randomStation.name}</b>`).openPopup();
 
-    // 地図を中心に移動
+    // 地図中心を移動
     map.setView([randomStation.lat, randomStation.lon], 12);
 });
 </script>
