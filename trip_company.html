@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>ダーツで電車旅行先決定（JR西日本限定）</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<style>
+  #map { height: 90vh; width: 100%; }
+  #dartBtn { padding: 10px 20px; font-size: 16px; margin: 10px; }
+</style>
+</head>
+<body>
+<h2>ダーツでJR西日本の駅を決めよう！</h2>
+<button id="dartBtn">JR西日本限定ダーツ</button>
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+// Leaflet地図初期化
+const map = L.map('map').setView([35.681, 139.767], 5);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
+
+// CSVファイルURL（raw形式に置き換える）
+const stationURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station.csv';
+const lineURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/line.csv';
+const companyURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/company.csv';
+
+let stations = [];
+let lines = {};
+let companies = {};
+
+// CSV読み込み関数
+async function fetchCSV(url) {
+    const res = await fetch(url);
+    const text = await res.text();
+    return text.split('\n').slice(1).map(row => row.split(','));
+}
+
+// 初期化
+async function initData() {
+    const stationRows = await fetchCSV(stationURL);
+    const lineRows = await fetchCSV(lineURL);
+    const companyRows = await fetchCSV(companyURL);
+
+    // line_cd -> company_cd
+    lineRows.forEach(l => {
+        const line_cd = l[0];
+        const company_cd = l[1];
+        lines[line_cd] = company_cd;
+    });
+
+    // company_cd -> company_name
+    companyRows.forEach(c => {
+        const company_cd = c[0];
+        const company_name = c[2];
+        companies[company_cd] = company_name;
+    });
+
+    // stations配列作成（JR西日本限定）
+    stations = stationRows.map(s => {
+        const line_cd = s[5]; // station.csvのline_cd列番号（要調整）
+        const company_cd = lines[line_cd];
+        const company_name = companies[company_cd];
+        return {
+            name: s[2], // station_name
+            lat: parseFloat(s[10]),
+            lon: parseFloat(s[9]),
+            company: company_name
+        };
+    }).filter(s => s.company === 'JR西日本');
+}
+
+initData();
+
+// ダーツボタン
+document.getElementById('dartBtn').addEventListener('click', () => {
+    if (stations.length === 0) {
+        return;
+    }
+
+    const randomStation = stations[Math.floor(Math.random() * stations.length)];
+
+    L.marker([randomStation.lat, randomStation.lon])
+      .addTo(map)
+      .bindPopup(`<b>${randomStation.name}</b>`).openPopup();
+
+    map.setView([randomStation.lat, randomStation.lon], 12);
+});
+</script>
+</body>
+</html>
