@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>ダーツで電車旅行先決定（JR西日本限定）</title>
+<title>ダーツで電車旅行先決定（フルCSV対応）</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <style>
@@ -11,83 +11,64 @@
 </style>
 </head>
 <body>
-<h2>ダーツでJR西日本の駅を決めよう！</h2>
-<button id="dartBtn">JR西日本限定ダーツ</button>
+<h2>ダーツで電車旅行先を決めよう！</h2>
+<button id="dartBtn">ダーツを投げる</button>
 <div id="map"></div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
-// Leaflet地図初期化
+// Leaflet地図初期化（東京駅付近）
 const map = L.map('map').setView([35.681, 139.767], 5);
+
+// OSMタイル
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
-// CSVファイルURL（raw形式に置き換える）
-const stationURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station.csv';
-const lineURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/line.csv';
-const companyURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/company.csv';
-
-let stations = [];
-let lines = {};
-let companies = {};
-
-// CSV読み込み関数
-async function fetchCSV(url) {
-    const res = await fetch(url);
-    const text = await res.text();
-    return text.split('\n').slice(1).map(row => row.split(','));
-}
-
-// 初期化
-async function initData() {
-    const stationRows = await fetchCSV(stationURL);
-    const lineRows = await fetchCSV(lineURL);
-    const companyRows = await fetchCSV(companyURL);
-
-    // line_cd -> company_cd
-    lineRows.forEach(l => {
-        const line_cd = l[0];
-        const company_cd = l[1];
-        lines[line_cd] = company_cd;
-    });
-
-    // company_cd -> company_name
-    companyRows.forEach(c => {
-        const company_cd = c[0];
-        const company_name = c[2];
-        companies[company_cd] = company_name;
-    });
-
-    // stations配列作成（JR西日本限定）
-    stations = stationRows.map(s => {
-        const line_cd = s[5]; // station.csvのline_cd列番号（要調整）
-        const company_cd = lines[line_cd];
-        const company_name = companies[company_cd];
-        return {
-            name: s[2], // station_name
-            lat: parseFloat(s[10]),
-            lon: parseFloat(s[9]),
-            company: company_name
-        };
-    }).filter(s => s.company === 'JR西日本');
-}
-
-initData();
+// GitHub raw CSV URL（要変更）
+const csvURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station/station.csv';
 
 // ダーツボタン
-document.getElementById('dartBtn').addEventListener('click', () => {
-    if (stations.length === 0) {
-        return;
+document.getElementById('dartBtn').addEventListener('click', async () => {
+    try {
+        // CSV読み込み（Lazy Load）
+        const response = await fetch(csvURL);
+        if (!response.ok) throw new Error('CSV読み込み失敗');
+        const data = await response.text();
+
+        // ヘッダ除去
+        const rows = data.split('\n').slice(1);
+
+        // 必要な列だけ抽出
+        const stations = rows.map(row => {
+            const cols = row.split(','); // カンマ区切り
+            return {
+                name: cols[2],               // station_name
+                lon: parseFloat(cols[9]),    // lon
+                lat: parseFloat(cols[10])    // lat
+            };
+        }).filter(s => !isNaN(s.lat) && !isNaN(s.lon));
+
+        if (stations.length === 0) {
+            alert('駅データが存在しません');
+            return;
+        }
+
+        // ランダム駅を選択
+        const randomStation = stations[Math.floor(Math.random() * stations.length)];
+
+        // マーカー表示
+        L.marker([randomStation.lat, randomStation.lon])
+          .addTo(map)
+          .bindPopup(`<b>${randomStation.name}</b>`).openPopup();
+
+        // 地図中心を移動
+        map.setView([randomStation.lat, randomStation.lon], 12);
+
+    } catch (err) {
+        console.error(err);
+        alert('CSVの読み込み中にエラーが発生しました');
     }
-
-    const randomStation = stations[Math.floor(Math.random() * stations.length)];
-
-    L.marker([randomStation.lat, randomStation.lon])
-      .addTo(map)
-      .bindPopup(`<b>${randomStation.name}</b>`).openPopup();
-
-    map.setView([randomStation.lat, randomStation.lon], 12);
 });
 </script>
 </body>
