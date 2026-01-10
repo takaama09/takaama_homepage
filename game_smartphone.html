@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>自殺他殺ゲーム</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      background: #f0f0f0;
+      margin: 0;
+    }
+    h1 {
+      text-align: center;
+      font-size: 1.8em;
+      margin-bottom: 20px;
+    }
+    #game {
+      max-width: 500px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+    button {
+      padding: 10px;
+      margin: 5px;
+      font-size: 1.2em;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #log {
+      margin-top: 20px;
+      white-space: pre-line;
+      background: #eee;
+      padding: 10px;
+      border-radius: 5px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>自殺他殺ゲーム</h1>
+  <div id="game">
+    <div id="buttons"></div>
+    <div id="log"></div>
+  </div>
+
+  <script>
+    const playerChoices = ["自殺", "他殺", "盾", "救出", "リタイア"];
+    const aiChoices = ["自殺", "他殺", "盾", "救出"];
+
+    const resultsTable = {
+      "自殺,自殺": ["終了", 0, 0],
+      "自殺,他殺": ["引き分け", 0, 0],
+      "自殺,盾": ["player", 1, 0],
+      "自殺,救出": ["ai", 0, 1],
+      "他殺,自殺": ["引き分け", 0, 0],
+      "他殺,他殺": ["引き分け", 0, 0],
+      "他殺,盾": ["ai", 0, 1],
+      "他殺,救出": ["player", 1, 0],
+      "盾,自殺": ["player", 1, 0],
+      "盾,他殺": ["player", 1, 0],
+      "盾,盾": ["引き分け", 0, 0],
+      "盾,救出": ["引き分け", 0, 0],
+      "救出,自殺": ["ai", 0, 1],
+      "救出,他殺": ["ai", 0, 1],
+      "救出,盾": ["引き分け", 0, 0],
+      "救出,救出": ["引き分け", 0, 0],
+    };
+
+    let playerPoints = 0;
+    let aiPoints = 0;
+    let turn = 1;
+    let playerRetired = false;
+
+    const logDiv = document.getElementById("log");
+    const buttonsDiv = document.getElementById("buttons");
+
+    function log(msg) {
+      logDiv.textContent += msg + "\n";
+      logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    function aiChooseHand() {
+      // ここではランダム。将来的にAI関数に置き換え可
+      return aiChoices[Math.floor(Math.random() * aiChoices.length)];
+    }
+
+    function playRound(player) {
+      if (player === "リタイア") {
+        log("あなたはリタイアしました！強制敗北です。");
+        aiPoints += 1;
+        playerRetired = true;
+        endGame();
+        return;
+      }
+
+      const ai = aiChooseHand();
+      log(`--- ターン ${turn} ---`);
+      log(`あなたの手: ${player}`);
+      log(`相手の手: ${ai}`);
+
+      const [result, playerPoint, aiPoint] = resultsTable[`${player},${ai}`];
+
+      if (result === "引き分け") {
+        log("引き分けです！ポイントは変わりません。");
+      } else if (result === "終了") {
+        log("両者自殺！ゲーム終了です！");
+        endGame();
+        return;
+      } else if (result === "player") {
+        playerPoints += playerPoint;
+        log(`あなたの勝ち！得点: ${playerPoint}`);
+      } else if (result === "ai") {
+        aiPoints += aiPoint;
+        log(`相手の勝ち！得点: ${aiPoint}`);
+      }
+
+      turn++;
+    }
+
+    function endGame() {
+      log("\n--- ゲーム終了 ---");
+      log(`あなたのポイント: ${playerPoints}`);
+      log(`相手のポイント: ${aiPoints}`);
+      if (playerRetired) {
+        log("最終勝利: 相手の勝ち！あなたはリタイアしました。");
+      } else if (playerPoints > aiPoints) {
+        log("最終勝利: あなたの勝ち！おめでとう！");
+      } else if (playerPoints < aiPoints) {
+        log("最終勝利: 相手の勝ち！次は勝ちましょう！");
+      } else {
+        log("最終結果: 引き分けです！");
+      }
+      // ボタンを無効化
+      buttonsDiv.innerHTML = "";
+    }
+
+    // ボタン作成
+    playerChoices.forEach(choice => {
+      const btn = document.createElement("button");
+      btn.textContent = choice;
+      btn.onclick = () => playRound(choice);
+      buttonsDiv.appendChild(btn);
+    });
+
+  </script>
+</body>
+</html>
