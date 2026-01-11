@@ -35,7 +35,7 @@
 <div id="ticketButtons" style="display: flex; flex-direction: row; gap: 8px; margin-bottom: 10px;">
   
 <div style="margin-bottom:10px;">
-  <button id="btnall">全鉄道から検索</button>
+  <button id="btnAll">全鉄道から検索</button>
 </div>
   
 <div style="margin-bottom:10px;">
@@ -47,12 +47,13 @@
 </div>
 
 <div style="margin-bottom:10px;">
-  <button id="btnKyushu">旅名人の九州満喫きっぷ</button>
+  <button id="btnTokai16">ＪＲ東海＆16私鉄 乗り鉄☆たびきっぷ</button>
 </div>
 
 <div style="margin-bottom:10px;">
-  <button id="btnTokai16">ＪＲ東海＆16私鉄 乗り鉄☆たびきっぷ</button>
+  <button id="btnKyushu">旅名人の九州満喫きっぷ</button>
 </div>
+
 </div>
 
 <div id="companyCheckboxes">
@@ -123,7 +124,7 @@ const stationURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage
 const joinURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station/join.csv';
 const companyURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station/company.csv';
 
-// JR西日本だけ
+
 const allowedCompanies = [];
 
 // BFS
@@ -351,6 +352,28 @@ function refreshCompanyDropdown() {
   generateCompanyCheckboxes();
 
   //----------------------------------------------
+
+  //特殊ボタン（全て）
+// 「全てチェック」ボタン
+document.getElementById('btnAll').addEventListener('click', () => {
+  allowedCompanies.length = 0; // まずクリア
+
+  // 下位チェックボックス全取得
+  const allCompanyCheckboxes = document.querySelectorAll('#companyCheckboxes input[data-company-type]');
+  allCompanyCheckboxes.forEach(cb => {
+    cb.checked = true;               // チェックON
+    allowedCompanies.push(cb.value); // allowedCompanies に追加
+  });
+
+  // 上位チェックボックスもON
+  const allTypeCheckboxes = document.querySelectorAll('#companyCheckboxes input:not([data-company-type])');
+  allTypeCheckboxes.forEach(cb => cb.checked = true);
+
+  // プルダウン更新
+  refreshCompanyDropdown();
+});
+
+
   //特殊ボタン設定（18きっぷ）
   document.getElementById('btn18Kippu').addEventListener('click', () => {
   // JR の type は '1'
@@ -367,6 +390,78 @@ function refreshCompanyDropdown() {
   // allowedCompanies 更新＆プルダウン同期
   updateAllowedCompanies();
 });
+
+//特殊ボタン設定（北海道・東日本パス）
+document.getElementById('btnHokkaiEast').addEventListener('click', () => {
+  allowedCompanies.length = 0; // まずクリア
+
+  // company_cd が 1 または 2 の会社だけを追加
+  Object.entries(companiesByType).forEach(([type, companies]) => {
+    companies.forEach(c => {
+      if (c.cd === '1' || c.cd === '2') allowedCompanies.push(c.cd);
+    });
+  });
+
+  // チェックボックスも連動
+  const checkboxes = document.querySelectorAll('#companyCheckboxes input[type=checkbox]');
+  checkboxes.forEach(cb => {
+    if (cb.dataset.companyType) {
+      cb.checked = allowedCompanies.includes(cb.value);
+    } else {
+      // 上位チェックボックス（タイプ）も連動
+      const type = cb.parentNode.textContent.trim().split(' ')[0]; // JR, 大手私鉄 など
+      cb.checked = (type === 'JR' || type === '大手私鉄');
+    }
+  });
+
+  // プルダウンも更新
+  refreshCompanyDropdown();
+});
+
+
+//特殊ボタン設定（東海）
+document.getElementById('btnTokai16').addEventListener('click', () => {
+  allowedCompanies.length = 0; // まずクリア
+
+  // 文字列で指定
+  const jrTokaiCompanies = [
+    '128', // 伊豆箱根鉄道
+    '170', // 岳南電車
+    '171', // 静岡鉄道
+    '172', // 天竜浜名湖鉄道
+    '173', // 遠州鉄道
+    '181', // 豊橋鉄道
+    '177', // 愛知環状鉄道
+    '176', // JR東海交通事業(城北線)
+    '175', // 名古屋臨海高速鉄道
+    '183', // 明知鉄道
+    '184', // 長良川鉄道
+    '185', // 樽見鉄道
+    '186', // 三岐鉄道
+    '187', // 伊勢鉄道
+    '189'  // 養老鉄道
+  ];
+
+  jrTokaiCompanies.forEach(cd => allowedCompanies.push(cd));
+
+  // チェックボックスも連動
+  const checkboxes = document.querySelectorAll('#companyCheckboxes input[type=checkbox]');
+  checkboxes.forEach(cb => {
+    if (cb.dataset.companyType) {
+      cb.checked = allowedCompanies.includes(cb.value);
+    } else {
+      // 上位チェックボックス（タイプ）も連動
+      const type = cb.parentNode.textContent.trim().split(' ')[0]; // JR, 大手私鉄 など
+      cb.checked = Array.from(cb.parentNode.querySelectorAll('input[data-company-type]'))
+                       .some(c => allowedCompanies.includes(c.value));
+    }
+  });
+
+  // プルダウンも更新
+  refreshCompanyDropdown();
+});
+
+
 
 　//特殊ボタン設定（旅名人）
 document.getElementById('btnKyushu').addEventListener('click', () => {
