@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>準備中</title>
+<title>準備中...</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <style>
@@ -344,6 +344,25 @@ function updateAllowedCompanies() {
 generateCompanyCheckboxes();
 updateAllowedCompanies();
 
+function refreshDropdowns() {
+  const currentType = companyTypeSelect.value;
+  if (currentType) {
+    const event = new Event('change');
+    companyTypeSelect.dispatchEvent(event);
+  }
+}
+
+// チェックボックス変更時
+function updateAllowedCompanies() {
+  const checkboxes = document.querySelectorAll('#companyCheckboxes input[type=checkbox]');
+  allowedCompanies.length = 0; // クリア
+  checkboxes.forEach(cb => {
+    if (cb.checked) allowedCompanies.push(cb.value);
+  });
+
+  refreshDropdowns(); // ← プルダウンも更新
+}
+
 
 
   //拡張プルダウン
@@ -386,7 +405,9 @@ companyTypeSelect.addEventListener('change', () => {
   const type = companyTypeSelect.value;
   if (!type || !companiesByType[type]) return;
 
-  companiesByType[type].forEach(c => {
+  companiesByType[type]
+    .filter(c => allowedCompanies.includes(c.cd)) 
+    .forEach(c => {
     const opt = document.createElement('option');
     opt.value = c.cd;
     opt.textContent = c.name;
