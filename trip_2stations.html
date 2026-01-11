@@ -132,7 +132,8 @@ function bfsShortestPath(adj, start, goal) {
 // ===== ボタン押下時 =====
 document.getElementById('searchBtn').addEventListener('click', async () => {
   const resultDiv = document.getElementById('result');
-  const startG = '1160308';
+  const startG = document.getElementById('startSelect').value;
+
 
   // 地図リセット
   mapLayers.forEach(l => map.removeLayer(l));
