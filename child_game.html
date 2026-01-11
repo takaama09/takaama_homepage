@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>溜め攻撃ゲーム</title>
+<title>子供の頃やったゲーム</title>
 <style>
 
 .button-row {
@@ -44,58 +44,68 @@ button:disabled {
   cursor: not-allowed;
 }
 
-  body { 
-    font-family: sans-serif; 
-    text-align: center; 
-    margin: 20px; 
-    padding: 0 10px; 
-  }
+body { 
+  font-family: sans-serif; 
+  text-align: center; 
+  margin: 20px; 
+  padding: 0 10px; 
+}
 
-  button { 
-    margin: 5px; 
-    padding: 15px 25px; 
-    font-size: 5vw; /* 画面幅に応じて文字サイズ */
-    min-width: 80px; /* 小さすぎないように最小幅 */
-    min-height: 50px;
-  }
+button { 
+  margin: 5px; 
+  padding: 15px 25px; 
+  font-size: 5vw; /* 画面幅に応じて文字サイズ */
+  min-width: 80px; /* 小さすぎないように最小幅 */
+  min-height: 50px;
+}
 
-  #log { 
-    margin-top: 20px; 
-    white-space: pre-line; 
-    font-size: 4vw; /* 画面幅に応じて文字サイズ */
-  }
+#log { 
+  margin-top: 20px; 
+  white-space: pre-line; 
+  font-size: 4vw; /* 画面幅に応じて文字サイズ */
+}
 
-  #result { 
-    margin-top: 20px; 
-    font-size: 6vw; 
-    font-weight: bold; 
-  }
+#result { 
+  margin-top: 20px; 
+  font-size: 6vw; 
+  font-weight: bold; 
+}
 
-  .win { color: green; }
-  .lose { color: red; }
-  .draw { color: gray; }
+.win { color: #e74c3c; }  /* 勝ち赤 */
+.lose { color: #3498db; } /* 負け青 */
 
-  #replay { 
-    display: none; 
-    margin-top: 20px; 
-    padding: 12px 25px; 
-    font-size: 5vw; 
-  }
+#replay { 
+  display: none; 
+  margin-top: 20px; 
+  padding: 12px 25px; 
+  font-size: 5vw; 
+  background-color: #f59e0b; /* 明るいオレンジ */
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+  transition: transform 0.1s;
+}
 
-  /* スマホ画面向け微調整 */
-  @media (max-width: 480px) {
-    button { padding: 18px 30px; }
-    #log { font-size: 5vw; }
-    #result { font-size: 7vw; }
-    #replay { font-size: 6vw; padding: 15px 30px; }
-  }
+#replay:active {
+  transform: translateY(2px);
+}
+
+/* スマホ画面向け微調整 */
+@media (max-width: 480px) {
+  button { padding: 18px 30px; }
+  #log { font-size: 5vw; }
+  #result { font-size: 7vw; }
+  #replay { font-size: 6vw; padding: 15px 30px; }
+}
 </style>
 
 </head>
 <body>
 
-<h1>溜め攻撃ゲーム</h1>
-<p>溜め、攻撃、防御、反射、貫通の5つのボタンから選んで戦おう！</p>
+<h1>子供の頃やったゲーム</h1>
+<p>子供の頃を思い出そう！※ローカルルールすり合わせ：攻撃・反射・貫通はそれぞれ溜めが1,3,5回必要</p>
 
 <div id="buttons">
   <!-- 上段: 攻撃系3つ -->
@@ -111,7 +121,6 @@ button:disabled {
     <button id="btnDefense" class="support" onclick="play('防御')">防御</button>
   </div>
 </div>
-
 
 <div id="status">
   <p>あなたの溜め: <span id="playerCharge">0</span></p>
@@ -186,11 +195,6 @@ function play(playerMove) {
     else if (enemyValid === '無効') result = 'win';
   }
 
-  log += '結果: ';
-  if (result === 'win') log += 'あなたの勝ち!';
-  else if (result === 'lose') log += 'あなたの負け…';
-  else log += '何も起きなかった';
-
   document.getElementById('log').innerText = log;
   document.getElementById('playerCharge').innerText = playerCharge;
   document.getElementById('enemyCharge').innerText = enemyCharge;
@@ -215,7 +219,7 @@ function resetGame() {
   document.getElementById('playerCharge').innerText = playerCharge;
   document.getElementById('enemyCharge').innerText = enemyCharge;
   document.getElementById('log').innerText = '';
-  document.getElementById('result').innerText = '';
+  document.getElementById('result').innerHTML = '';
   document.getElementById('replay').style.display = 'none';
   updateButtons();
 }
@@ -225,3 +229,4 @@ updateButtons();
 
 </body>
 </html>
+
