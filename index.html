@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>たかあましゆん</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    :root {
+      --main: #2563eb;
+      --bg: #f4f6f8;
+      --card: #ffffff;
+      --border: #e5e7eb;
+      --text: #222;
+      --sub: #666;
+      --disabled: #e0e0e0;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    /* ------------------------
+       ヒーロー
+    ------------------------ */
+    .hero {
+      text-align: center;
+      padding: 50px 20px 40px;
+    }
+
+    .hero h1 {
+      font-size: 40px;
+      margin: 0 0 10px;
+    }
+
+    .hero p {
+      color: var(--sub);
+      font-size: 16px;
+    }
+
+    /* ------------------------
+       セクション
+    ------------------------ */
+    section {
+      margin-top: 50px;
+    }
+
+    section h2 {
+      font-size: 22px;
+      margin-bottom: 20px;
+      border-left: 5px solid var(--main);
+      padding-left: 12px;
+    }
+
+    /* ------------------------
+       カードリンク
+    ------------------------ */
+    .links {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      display: block;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+      text-decoration: none;
+      color: var(--text);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    }
+
+    .card span {
+      display: block;
+      font-size: 14px;
+      color: var(--sub);
+      margin-top: 6px;
+    }
+
+    /* ------------------------
+       準備中カード
+    ------------------------ */
+    .card.disabled {
+      background: var(--disabled);
+      color: #888;
+      border-color: #ccc;
+      pointer-events: none;
+      position: relative;
+    }
+
+    .card.disabled::after {
+      content: "🔒 準備中";
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      font-size: 12px;
+      color: #666;
+    }
+
+    /* ------------------------
+       フッター
+    ------------------------ */
+    footer {
+      text-align: center;
+      margin: 60px 0 20px;
+      font-size: 13px;
+      color: var(--sub);
+    }
+
+    @media (max-width: 600px) {
+      .hero h1 {
+        font-size: 30px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+
+    <!-- ヒーロー -->
+    <div class="hero">
+      <h1>たかあましゆん</h1>
+      <p>旅と鉄道を中心に発信するYouTuber</p>
+    </div>
+
+    <!-- SNS / 動画 -->
+    <section>
+      <h2>SNS / 動画</h2>
+      <div class="links">
+        <a class="card" href="https://x.com/stakaama" target="_blank">
+          X（旧Twitter）
+          <span>日常・告知など</span>
+        </a>
+        <a class="card" href="https://www.youtube.com/@takaama" target="_blank">
+          YouTube
+          <span>旅・鉄道動画</span>
+        </a>
+        <a class="card" href="https://tabelog.com/rvwr/018131802/" target="_blank">
+          食べログ
+          <span>旅先グルメ記録</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- ゲーム・企画 -->
+    <section>
+      <h2>ゲーム・企画</h2>
+      <div class="links">
+        <a class="card" href="kill_game.html">
+          劇ヤバゲーム
+          <span>※プレイ注意</span>
+        </a>
+        <a class="card" href="trip_company.html">
+          ダーツで行き先を決めよう！
+          <span>運任せ旅企画</span>
+        </a>
+        <div class="card disabled">
+          子供の頃よくやったゲーム
+          <span>パスワード制</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 鉄道・旅行 -->
+    <section>
+      <h2>鉄道・旅行</h2>
+      <div class="links">
+        <a class="card" href="JRrosenzu.html">
+          JR路線図
+          <span>全国対応</span>
+        </a>
+        <a class="card" href="saikyo_trip.html">
+          最強の鉄道旅行計画
+          <span>ルート作成</span>
+        </a>
+        <a class="card" href="westjr_trip.html">
+          JR西日本の旅行
+          <span>エリア特化</span>
+        </a>
+        <div class="card disabled">
+          GPTツール
+          <span>実験中</span>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      © たかあましゆん
+    </footer>
+
+  </div>
+
+</body>
+</html>
