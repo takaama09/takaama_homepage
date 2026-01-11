@@ -1,63 +1,99 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>駅読み込みテスト</title>
+<meta charset="UTF-8">
+<title>テスト</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<style>
+  #map { height: 90vh; width: 100%; }
+</style>
 </head>
 <body>
-  <h2 id="result">読み込み中…</h2>
+<h2>JR西日本限定で、旅のルートを考えます。</h2>
+<div id="map"></div>
 
-  <script>
-    const stationURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/station/station.csv';
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+const map = L.map('map').setView([35.5, 135], 6);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
 
-    // CSVをパースする関数
-    function parseCSV(text) {
-      const lines = text.trim().split('\n');
-      const header = lines[0].split(',');
-      return lines.slice(1).map(line => {
-        const cols = line.split(',');
-        const obj = {};
-        header.forEach((h, i) => {
-          obj[h] = cols[i];
+// CSV URL
+const lineURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station/line.csv';
+const stationURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station/station.csv';
+const joinURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station/join.csv';
+
+(async () => {
+    try {
+        const [lineRes, stationRes, joinRes] = await Promise.all([
+            fetch(lineURL), fetch(stationURL), fetch(joinURL)
+        ]);
+        const lineData = await lineRes.text();
+        const stationData = await stationRes.text();
+        const joinData = await joinRes.text();
+
+        // line_cd -> company_cd
+        const lineCompanyMap = {};
+        lineData.replace(/\r/g,'').split('\n').slice(1).forEach(row => {
+            if(!row) return;
+            const cols = row.split(',').map(c=>c.trim());
+            if(cols.length < 2) return;
+            const line_cd = cols[0];
+            const company_cd = parseInt(cols[1]);
+            if(isNaN(company_cd)) return;
+            lineCompanyMap[line_cd] = company_cd;
         });
-        return obj;
-      });
-    }
 
-    async function main() {
-      // CSV読み込み
-      const res = await fetch(stationURL);
-      const text = await res.text();
-      const stations = parseCSV(text);
+        // JR西日本駅のみ抽出
+        const stationsMap = {};
+        stationData.replace(/\r/g,'').split('\n').slice(1).forEach(row=>{
+            if(!row) return;
+            const cols = row.split(',').map(c=>c.trim());
+            if(cols.length < 11) return;
+            const code = cols[0], gcode = cols[1], name = cols[2];
+            const lon = parseFloat(cols[9]), lat = parseFloat(cols[10]);
+            const line_cd = cols[5];
+            if(!code || !name || isNaN(lat) || isNaN(lon)) return;
+            if(!lineCompanyMap[line_cd]) return;
+            const company_cd = lineCompanyMap[line_cd];
+            if(company_cd !== 4) return; // JR西日本のみ
+            stationsMap[code] = {gcode, name, lat, lon, line_cd};
+        });
 
-      console.log('stations sample:', stations.slice(0, 5));
+        // 地図に駅マーカー描画
+        Object.keys(stationsMap).forEach(code => {
+            const s = stationsMap[code];
+            L.circleMarker([s.lat, s.lon], {radius:3, color:'blue'}).addTo(map)
+                .bindPopup(s.name);
+        });
 
-      // station_g_cd → 駅名（代表）
-      const stationGToName = {};
-      for (const s of stations) {
-        if (!stationGToName[s.station_g_cd]) {
-          stationGToName[s.station_g_cd] = s.station_name;
+        // ランダム駅をn個選ぶ
+        function pickRandomStations(stationsMap, n){
+            const keys = Object.keys(stationsMap);
+            const shuffled = keys.sort(()=>Math.random()-0.5);
+            return shuffled.slice(0,n);
         }
-      }
 
-      // 最寄駅（固定：甲南山手）
-      const startG = "1160308";
+        // 最寄駅スタート
+        const startCode = '1160308'; // 例：最寄駅
 
-      // ランダム駅
-      const allG = Object.keys(stationGToName);
-      const goalG = allG[Math.floor(Math.random() * allG.length)];
+        // 1回目のランダム3駅
+        let random3_1 = pickRandomStations(stationsMap, 3);
+        let route1 = [startCode];
+        random3_1.forEach(code=>{
+            const last = route1[route1.length-1];
+            const path = bfsPath(graph, last, code);
+            if(path) route1 = route1.concat(path.slice(1));
+        });
 
-      const startName = stationGToName[startG];
-      const goalName = stationGToName[goalG];
 
-      document.getElementById('result').innerText =
-        `最寄駅：${startName}駅\n→ ゴール駅：${goalName}駅`;
-
-      console.log('startG:', startG, startName);
-      console.log('goalG:', goalG, goalName);
+    } catch(err){
+        console.error(err);
+        alert('CSV読み込みまたは路線図作成中にエラー発生');
     }
-
-    main();
-  </script>
+})();
+</script>
 </body>
 </html>
