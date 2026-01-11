@@ -133,11 +133,14 @@ function bfsShortestPath(adj, start, goal) {
     const company_name = c[2];
     const company_type = c[7];
       
+    if (!companiesByType[company_type]) {
+      companiesByType[company_type] = [];
+    }
     companiesByType[company_type].push({
-    cd: company_cd,
-    name: company_name
-  });
-});
+      cd: company_cd,
+      name: company_name
+    });
+
 
   const jrLines = new Set();
   lineText.replace(/\r/g,'').split('\n').slice(1).forEach(r => {
@@ -231,18 +234,6 @@ companyTypeSelect.addEventListener('change', () => {
     companySelect.appendChild(opt);
   });
 });
-
-const COMPANIES = {
-  '1': [
-    { value: '4', label: 'JR西日本' }
-  ]
-};
-
-const LINES = {
-  '4': [
-    { value: 'dummy', label: '（路線は後で実装）' }
-  ]
-};
 
 // 会社タイプ投入
 COMPANY_TYPES.forEach(t => {
