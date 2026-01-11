@@ -380,7 +380,15 @@ if (!startG || !stationGInfo[startG]) {
   mapLayers.forEach(l => map.removeLayer(l));
   mapLayers = [];
 
-  const goalG = allG[Math.floor(Math.random() * allG.length)];
+  // allowedCompanies 内で到達可能な駅だけゴール候補にする
+  const candidateGoals = allG.filter(g => {
+    // g の駅が allowedCompanies 内の線に存在するかどうか
+    const edges = adj[g] || [];
+    return edges.some(edge => allowedCompanies.includes(edge.company));
+  });
+  
+  const goalG = candidateGoals[Math.floor(Math.random() * candidateGoals.length)];
+  
   resultDiv.textContent =
     `最寄駅：${stationGInfo[startG].name}駅\n` +
     `→ ゴール駅：${stationGInfo[goalG].name}駅\n\n計算中...`;
