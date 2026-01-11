@@ -30,7 +30,7 @@
 </head>
 <body>
 
-<h2>ランダム駅への最短経路を表示します！</h2>
+<h2>ランダムな駅への最短経路を表示します！</h2>
   
 <div id="filterRow">
 <div style="margin-bottom:10px;">
@@ -86,11 +86,15 @@ let adj = {};
 let stationGInfo = {};
 let allG = [];
 let mapLayers = [];
+let companiesByType = {}; 
+
 
 // CSV URL
 const lineURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station/line.csv';
 const stationURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station/station.csv';
 const joinURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station/join.csv';
+const companyURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station/company.csv';
+
 
 // BFS
 function bfsShortestPath(adj, start, goal) {
@@ -114,11 +118,26 @@ function bfsShortestPath(adj, start, goal) {
 
 // ===== 初期化（CSV読み込みは一度だけ）=====
 (async () => {
-  const [lineText, stationText, joinText] = await Promise.all([
+  const [companyText, lineText, stationText, joinText] = await Promise.all([
+    fetch(companyURL).then(r => r.text()),
     fetch(lineURL).then(r => r.text()),
     fetch(stationURL).then(r => r.text()),
     fetch(joinURL).then(r => r.text())
   ]);
+
+    companyText.replace(/\r/g,'').split('\n').slice(1).forEach(r => {
+    const c = r.split(',');
+    if (c.length < 10) return;
+
+    const company_cd = c[0];
+    const company_name = c[2];
+    const company_type = c[7];
+      
+    companiesByType[company_type].push({
+    cd: company_cd,
+    name: company_name
+  });
+});
 
   const jrLines = new Set();
   lineText.replace(/\r/g,'').split('\n').slice(1).forEach(r => {
@@ -127,7 +146,6 @@ function bfsShortestPath(adj, start, goal) {
   });
 
   const stationCdToG = {};
-
   stationText.replace(/\r/g,'').split('\n').slice(1).forEach(r => {
     const c = r.split(',');
     if (c.length < 11) return;
@@ -183,10 +201,36 @@ const companyTypeSelect = document.getElementById('companyTypeSelect');
 const companySelect = document.getElementById('companySelect');
 const lineSelect = document.getElementById('lineSelect');
 
-// 初期値（今は仮）
-const COMPANY_TYPES = [
-  { value: '1', label: 'JR' }
-];
+// 表示用ラベル
+const companyTypeLabel = {
+  '0': 'その他',
+  '1': 'JR',
+  '2': '大手私鉄',
+  '3': '準大手私鉄'
+};
+
+// company_type を入れる
+Object.keys(companiesByType).forEach(type => {
+  const opt = document.createElement('option');
+  opt.value = type;
+  opt.textContent = companyTypeLabel[type] || type;
+  companyTypeSelect.appendChild(opt);
+});
+
+companyTypeSelect.addEventListener('change', () => {
+  companySelect.innerHTML = '<option value="">選択してください</option>';
+  lineSelect.innerHTML = '<option value="">選択してください</option>';
+
+  const type = companyTypeSelect.value;
+  if (!type || !companiesByType[type]) return;
+
+  companiesByType[type].forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.cd;
+    opt.textContent = c.name;
+    companySelect.appendChild(opt);
+  });
+});
 
 const COMPANIES = {
   '1': [
