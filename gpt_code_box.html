@@ -161,7 +161,7 @@ function bfsShortestPath(adj, start, goal) {
     const lon = parseFloat(c[9]);
     const lat = parseFloat(c[10]);
 
-    if (!jrLines.has(line_cd)) return;
+   /if (!jrLines.has(line_cd)) return;
     if (isNaN(lat) || isNaN(lon)) return;
 
     stationCdToG[station_cd] = g;
@@ -184,7 +184,7 @@ function bfsShortestPath(adj, start, goal) {
     const s1 = c[1];
     const s2 = c[2];
 
-    if (!jrLines.has(line_cd)) return;
+    /if (!jrLines.has(line_cd)) return;
     if (!(s1 in stationCdToG) || !(s2 in stationCdToG)) return;
 
     const g1 = stationCdToG[s1];
