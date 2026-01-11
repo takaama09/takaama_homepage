@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>自己紹介｜たかあましゆん</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    :root {
+      --main: #2563eb;
+      --bg: #f4f6f8;
+      --card: #ffffff;
+      --border: #e5e7eb;
+      --text: #222;
+      --sub: #666;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    /* ========================
+       ロック画面
+    ======================== */
+    #lock-screen {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    .lock-box {
+      background: #fff;
+      border-radius: 16px;
+      padding: 30px;
+      width: 300px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+
+    .lock-box h1 {
+      font-size: 20px;
+      margin-bottom: 15px;
+    }
+
+    #display {
+      font-size: 24px;
+      letter-spacing: 6px;
+      margin-bottom: 20px;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #f9fafb;
+    }
+
+    .keypad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .keypad button {
+      font-size: 18px;
+      padding: 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #f3f4f6;
+      cursor: pointer;
+    }
+
+    .keypad button:hover {
+      background: #e5e7eb;
+    }
+
+    /* ========================
+       本体UI
+    ======================== */
+
+    .hero {
+      text-align: center;
+      padding: 30px 20px 20px;
+    }
+
+    .hero h1 {
+      font-size: 36px;
+      margin: 0;
+    }
+
+    section {
+      margin-top: 50px;
+    }
+
+    section h2 {
+      font-size: 22px;
+      margin-bottom: 20px;
+      border-left: 5px solid var(--main);
+      padding-left: 12px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+    }
+
+    .card p {
+      margin: 0 0 10px;
+      line-height: 1.6;
+    }
+
+    .links {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+    }
+
+    .link-card {
+      display: block;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+      text-decoration: none;
+      color: var(--text);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .link-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    }
+
+    .link-card span {
+      display: block;
+      font-size: 14px;
+      color: var(--sub);
+      margin-top: 6px;
+      line-height: 1.5;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    footer {
+      text-align: center;
+      margin: 60px 0 20px;
+      font-size: 13px;
+      color: var(--sub);
+    }
+
+    @media (max-width: 600px) {
+      .hero h1 { font-size: 28px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- 🔒 ロック画面 -->
+<div id="lock-screen">
+  <div class="lock-box">
+    <h1>🔒 パスワード入力</h1>
+    <div id="display">----</div>
+
+    <div class="keypad">
+      <button onclick="press(1)">1</button>
+      <button onclick="press(2)">2</button>
+      <button onclick="press(3)">3</button>
+      <button onclick="press(4)">4</button>
+      <button onclick="press(5)">5</button>
+      <button onclick="press(6)">6</button>
+      <button onclick="press(7)">7</button>
+      <button onclick="press(8)">8</button>
+      <button onclick="press(9)">9</button>
+      <button onclick="clearCode()">C</button>
+      <button onclick="press(0)">0</button>
+      <button onclick="submitCode()">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- 🔓 本体（最初は非表示） -->
+<div id="content" style="display:none;">
+
+  <div class="container">
+
+    <div class="hero">
+      <h1>自己紹介</h1>
+    </div>
+
+    <section>
+      <h2>自己紹介</h2>
+      <div class="card">
+        <p>
+          たかあましゆんです。<br>
+          主に鉄道旅をテーマに、全国各地を巡る動画をYouTubeで投稿しています。
+        </p>
+      </div>
+    </section>
+
+    <section>
+      <h2>経歴</h2>
+      <div class="card">
+        <ul>
+          <li>2019.03 甲陽学院高等学校 卒業</li>
+          <li>2019.04 京都大学 理学部理学科 入学</li>
+          <li>2023.03 京都大学 理学部理学科 卒業</li>
+          <li>2023.04 京都大学 理学研究科 地球惑星科学専攻 入学</li>
+          <li>2025.03 京都大学 理学研究科 地球惑星科学専攻 卒業</li>
+          <li>2025.04 xxx株式会社 入社</li>
+          <li>2025.05 xxx株式会社 xxx本部 xxxXX</li>
+          <li>2025.10 xxx株式会社 xxx本部 xxx部 xxx室 xxx</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>取得資格</h2>
+      <div class="card">
+        <ul>
+          <li>2020.02 普通自動車第一種運転免許</li>
+          <li>2023.03 中学校教諭一種免許状（数学）</li>
+          <li>2023.03 高等学校教諭一種免許状（数学）</li>
+          <li>2025.03 TOEIC 855</li>
+          <li>2025.03 ITパスポート</li>
+          <li>2025.10 情報セキュリティマネジメント</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>趣味</h2>
+      <div class="card">
+        <ul>
+          <li>野球（阪神タイガース）</li>
+          <li>サッカー（セレッソ大阪）</li>
+          <li>人狼ゲーム・Among Us</li>
+          <li>鉄道・青春18きっぷ</li>
+          <li>音楽（軽音・キーボード）</li>
+          <li>担々麺・スパイスカレー・マクドナルド</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>出版物</h2>
+      <div class="links">
+        <a class="link-card"
+           href="https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2025JB031503?af=R"
+           target="_blank">
+          投稿論文（JGR）
+          <span>
+            Seismic Source Spectral Properties of Dynamic Rupture With a Self-Similar,
+            Self-Healing Slip Pulse
+          </span>
+          <span>
+            自己相似的・自己回復型すべりパルスを伴う動的破壊の地震源スペクトル特性
+          </span>
+        </a>
+      </div>
+    </section>
+
+    <footer>
+      © たかあましゆん
+    </footer>
+
+  </div>
+</div>
+
+<script>
+  const PASSWORD = "1234"; // ★ ここを変更
+  let input = "";
+
+  function press(num) {
+    if (input.length < 4) {
+      input += num;
+      updateDisplay();
+    }
+  }
+
+  function clearCode() {
+    input = "";
+    updateDisplay();
+  }
+
+  function updateDisplay() {
+    document.getElementById("display").textContent =
+      input.padEnd(4, "-");
+  }
+
+  function submitCode() {
+    if (input === PASSWORD) {
+      document.getElementById("lock-screen").style.display = "none";
+      document.getElementById("content").style.display = "block";
+    } else {
+      input = "";
+      updateDisplay();
+      alert("パスワードが違います");
+    }
+  }
+</script>
+
+</body>
+</html>
