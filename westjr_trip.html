@@ -2,186 +2,119 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>旅行計画</title>
+<title>JR西日本 最短経路（Python忠実・安定版）</title>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <style>
 body { font-family: sans-serif; }
-pre { background: #f5f5f5; padding: 10px; }
+pre { background:#f5f5f5; padding:10px; }
 </style>
 </head>
 <body>
 
-<h2>JR西日本　旅行計画</h2>
+<h2>Python忠実移植（CSV安全版）</h2>
 <button id="run">実行</button>
-
 <pre id="output">未実行</pre>
 
 <script>
-// =========================
-// CSV URL（あなた指定）
-/* ======================= */
-const lineURL =
-  'https://raw.githubusercontent.com/takaama09/takaama_homepage/station/line.csv';
-const stationURL =
-  'https://raw.githubusercontent.com/takaama09/takaama_homepage/station/station.csv';
-const joinURL =
-  'https://raw.githubusercontent.com/takaama09/takaama_homepage/station/join.csv';
+const stationURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/station/station.csv';
+const lineURL    = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/station/line.csv';
+const joinURL    = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/station/join.csv';
 
-// =========================
-// CSV 読み込み（pandas.read_csv 相当）
-/* ======================= */
-// async function loadCSV(url) {
-//   const text = await fetch(url).then(r => r.text());
-//   const lines = text.trim().split('\n');
-//   const header = lines[0].split(',');
-
-//   return lines.slice(1).map(line => {
-//     const cols = line.split(',');
-//     const obj = {};
-//     header.forEach((h, i) => obj[h] = cols[i]);
-//     return obj;
-//   });
-// }
-
-async function loadCSV(url) {
-  const text = await fetch(url).then(r => r.text());
-
-  const lines = text
-    .replace(/\r/g, '')        // CR除去
-    .replace(/^\uFEFF/, '')    // BOM除去
-    .trim()
-    .split('\n');
-
-  const header = lines[0].split(',').map(h => h.trim());
-
-  return lines.slice(1).map(line => {
-    const cols = line.split(',').map(c => c.trim());
-    const obj = {};
-    header.forEach((h, i) => {
-      obj[h] = cols[i];
+function loadCSV(url) {
+  return new Promise(resolve => {
+    Papa.parse(url, {
+      download: true,
+      header: true,
+      skipEmptyLines: true,
+      complete: res => resolve(res.data)
     });
-    return obj;
   });
 }
 
-
-// =========================
-// BFS（Pythonと同じ実装）
-/* ======================= */
 function bfsShortestPath(adj, start, goal) {
   const visited = new Set();
-  const queue = [[start]]; // deque([[start]])
+  const queue = [[start]];
 
-  while (queue.length > 0) {
-    const path = queue.shift();      // popleft
+  while (queue.length) {
+    const path = queue.shift();
     const node = path[path.length - 1];
 
     if (node === goal) return path;
 
     if (!visited.has(node)) {
       visited.add(node);
-      for (const neighbor of (adj[node] || [])) {
-        const newPath = path.slice();
-        newPath.push(neighbor);
-        queue.push(newPath);
+      for (const n of (adj[node] || [])) {
+        queue.push([...path, n]);
       }
     }
   }
   return null;
 }
 
-// =========================
-// メイン処理
-/* ======================= */
 document.getElementById("run").onclick = async () => {
   const output = document.getElementById("output");
   output.textContent = "計算中…";
 
-  // CSV読み込み
   const station = await loadCSV(stationURL);
-  const line = await loadCSV(lineURL);
-  const join = await loadCSV(joinURL);
+  const line    = await loadCSV(lineURL);
+  const join    = await loadCSV(joinURL);
 
-  // JR西日本
   const jr_company_cd = "4";
 
-  // jr_lines = line[line['company_cd'] == '4']['line_cd']
   const jrLines = new Set(
     line.filter(l => l.company_cd === jr_company_cd)
         .map(l => l.line_cd)
   );
 
-  // jr_joins
   const jrJoins = join.filter(j => jrLines.has(j.line_cd));
 
-  // station_cd -> station_g_cd
   const stationCdToG = {};
+  const stationGToName = {};
+
   station.forEach(s => {
     stationCdToG[s.station_cd] = s.station_g_cd;
-  });
-
-  // station_g_cd -> station_name（first）
-  const stationGToName = {};
-  station.forEach(s => {
     if (!(s.station_g_cd in stationGToName)) {
       stationGToName[s.station_g_cd] = s.station_name;
     }
   });
 
-  // 隣接リスト作成
   const adj = {};
 
-  jrJoins.forEach(row => {
-    const st_cd1 = row.station_cd1;
-    const st_cd2 = row.station_cd2;
+  jrJoins.forEach(r => {
+    const c1 = r.station_cd1;
+    const c2 = r.station_cd2;
+    if (!(c1 in stationCdToG) || !(c2 in stationCdToG)) return;
 
-    if (!(st_cd1 in stationCdToG) || !(st_cd2 in stationCdToG)) return;
+    const g1 = stationCdToG[c1];
+    const g2 = stationCdToG[c2];
+    if (g1 === g2) return;
 
-    const st1_g = stationCdToG[st_cd1];
-    const st2_g = stationCdToG[st_cd2];
-
-    if (st1_g === st2_g) return;
-
-    adj[st1_g] ??= new Set();
-    adj[st2_g] ??= new Set();
-    adj[st1_g].add(st2_g);
-    adj[st2_g].add(st1_g);
+    adj[g1] ??= new Set();
+    adj[g2] ??= new Set();
+    adj[g1].add(g2);
+    adj[g2].add(g1);
   });
 
-  // Set → Array
-  Object.keys(adj).forEach(k => {
-    adj[k] = Array.from(adj[k]);
-  });
+  Object.keys(adj).forEach(k => adj[k] = [...adj[k]]);
 
-  // スタート駅
-  const start_station_g_cd = "1160308";
+  const start = "1160308";
 
-  // possible_targets = list(all_jr_station_g_cds - {start})
-  const all_jr_station_g_cds = Object.keys(adj);
-  const possible_targets =
-    all_jr_station_g_cds.filter(x => x !== start_station_g_cd);
+  const all = Object.keys(adj);
+  const targets = all.filter(x => x !== start);
+  const goal = targets[Math.floor(Math.random() * targets.length)];
 
-  // end_station_g_cd = random.choice(possible_targets)
-  const end_station_g_cd =
-    possible_targets[Math.floor(Math.random() * possible_targets.length)];
+  const path = bfsShortestPath(adj, start, goal);
 
-  // BFS
-  const path =
-    bfsShortestPath(adj, start_station_g_cd, end_station_g_cd);
-
-  // 出力（Pythonと同じ）
   let text = "";
-
   if (path) {
     text += "最短経路：\n";
-    path.forEach(g => {
-      text += stationGToName[g] + "\n";
-    });
+    path.forEach(g => text += stationGToName[g] + "\n");
   } else {
     text += "経路が見つかりませんでした。\n";
   }
 
-  text += `\nスタート: ${stationGToName[start_station_g_cd]} (${start_station_g_cd})`;
-  text += `\nゴール: ${stationGToName[end_station_g_cd]} (${end_station_g_cd})`;
+  text += `\nスタート: ${stationGToName[start]} (${start})`;
+  text += `\nゴール: ${stationGToName[goal]} (${goal})`;
 
   output.textContent = text;
 };
