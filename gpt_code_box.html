@@ -7,6 +7,17 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <style>
   body { font-family: sans-serif; }
+  #filterRow {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;   /* 画面狭い時は折り返す */
+    margin-bottom: 10px;
+  }
+  #filterRow select {
+    font-size: 14px;
+    padding: 4px 6px;
+  }
   #map { height: 70vh; width: 100%; }
   #result { padding: 10px; font-size: 16px; white-space: pre-line; }
   #searchBtn {
@@ -168,7 +179,7 @@ function bfsShortestPath(adj, start, goal) {
 
 
   //拡張プルダウン
-  const companyTypeSelect = document.getElementById('companyTypeSelect');
+const companyTypeSelect = document.getElementById('companyTypeSelect');
 const companySelect = document.getElementById('companySelect');
 const lineSelect = document.getElementById('lineSelect');
 
