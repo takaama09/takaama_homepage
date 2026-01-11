@@ -19,12 +19,43 @@
 </head>
 <body>
 
-<h2>JR西日本限定でランダム駅への最短経路を表示します！</h2>
+<h2>ランダム駅への最短経路を表示します！</h2>
 
+<div style="margin-bottom:10px;">
+  <label>
+    事業者区分：
+    <select id="companyTypeSelect">
+      <option value="">選択してください</option>
+    </select>
+  </label>
+</div>
+
+<div style="margin-bottom:10px;">
+  <label>
+    会社：
+    <select id="companySelect">
+      <option value="">選択してください</option>
+    </select>
+  </label>
+</div>
+
+<div style="margin-bottom:10px;">
+  <label>
+    路線：
+    <select id="lineSelect">
+      <option value="">選択してください</option>
+    </select>
+  </label>
+</div>
+
+<div style="margin-bottom:10px;">
 <label>
-  最寄駅を選んでください：
-  <select id="startSelect"></select>
+  最寄駅：
+  <select id="startSelect">
+    <option value="">選択してください</option>
+  </select>
 </label>
+</div>
   
 <button id="searchBtn">検索する！</button>
 <div id="result">ボタンを押してください</div>
@@ -132,6 +163,65 @@ function bfsShortestPath(adj, start, goal) {
   });
 
   allG = Object.keys(adj);
+
+
+  //拡張プルダウン
+  const companyTypeSelect = document.getElementById('companyTypeSelect');
+const companySelect = document.getElementById('companySelect');
+const lineSelect = document.getElementById('lineSelect');
+
+// 初期値（今は仮）
+const COMPANY_TYPES = [
+  { value: '1', label: 'JR' }
+];
+
+const COMPANIES = {
+  '1': [
+    { value: '4', label: 'JR西日本' }
+  ]
+};
+
+const LINES = {
+  '4': [
+    { value: 'dummy', label: '（路線は後で実装）' }
+  ]
+};
+
+// 会社タイプ投入
+COMPANY_TYPES.forEach(t => {
+  const opt = document.createElement('option');
+  opt.value = t.value;
+  opt.textContent = t.label;
+  companyTypeSelect.appendChild(opt);
+});
+
+// 会社タイプ変更
+companyTypeSelect.addEventListener('change', () => {
+  companySelect.innerHTML = '<option value="">選択してください</option>';
+  lineSelect.innerHTML = '<option value="">選択してください</option>';
+
+  const companies = COMPANIES[companyTypeSelect.value] || [];
+  companies.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.value;
+    opt.textContent = c.label;
+    companySelect.appendChild(opt);
+  });
+});
+
+// 会社変更
+companySelect.addEventListener('change', () => {
+  lineSelect.innerHTML = '<option value="">選択してください</option>';
+
+  const lines = LINES[companySelect.value] || [];
+  lines.forEach(l => {
+    const opt = document.createElement('option');
+    opt.value = l.value;
+    opt.textContent = l.label;
+    lineSelect.appendChild(opt);
+  });
+});
+
 
   //プルダウン選択
   const startSelect = document.getElementById('startSelect');
