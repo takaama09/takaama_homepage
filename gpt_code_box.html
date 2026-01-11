@@ -632,9 +632,12 @@ document.getElementById('searchBtn').addEventListener('click', async () => {
 
 // 結果表示
 resultDiv.innerHTML = 
-  `最寄駅：<span style="font-weight:bold; color:red;">${stationGInfo[startG].name}駅</span> → ` +
-  `ゴール駅：<span style="font-weight:bold; color:red;">${stationGInfo[goalG].name}駅</span><br><br>` +
+  `最寄駅：<span style="font-weight:bold; color:red;">${stationGInfo[startG].name}駅</span>` +
+  `(<span style="color:black;">${getCompanyNameByStation(startG)}</span>) → ` +
+  `ゴール駅：<span style="font-weight:bold; color:red;">${stationGInfo[goalG].name}駅</span>` +
+  `(<span style="color:black;">${getCompanyNameByStation(goalG)}</span>)<br><br>` +
   path.map(g => stationGInfo[g].name + '駅').join(' → ');
+
 
 
 // 駅コードから会社名を取得する関数
