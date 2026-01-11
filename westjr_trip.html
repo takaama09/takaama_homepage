@@ -1,131 +1,106 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<title>JR経路探索</title>
-</head>
-<body>
+import pandas as pd
+import random
+from collections import deque
 
-<h2>JR西日本 最短経路探索</h2>
+# =========================
+# CSV読み込み（すべて文字列）
+# =========================
+station = pd.read_csv("station.csv", dtype=str)
+line = pd.read_csv("line.csv", dtype=str)
+join = pd.read_csv("join.csv", dtype=str)
+company = pd.read_csv("company.csv", dtype=str)
 
-開始駅: <input id="start" value="大阪">
-ゴール駅: <input id="goal" value="姫路">
-<button onclick="run()">探索</button>
+# =========================
+# JR西日本
+# =========================
+JR_COMPANY_CD = "4"
 
-<pre id="result"></pre>
+jr_lines = set(line[line["company_cd"] == JR_COMPANY_CD]["line_cd"])
+jr_joins = join[join["line_cd"].isin(jr_lines)]
 
-<script>
-// CSV URL
-const lineURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/station/line.csv';
-const stationURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/station/station.csv';
-const joinURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/station/join.csv';
+# =========================
+# station_cd → station_g_cd
+# =========================
+station_cd_to_g = dict(
+    zip(station["station_cd"], station["station_g_cd"])
+)
 
-// CSV 読み込み
-async function loadCSV(url) {
-  const text = await fetch(url).then(r => r.text());
-  const lines = text.trim().split('\n');
-  const header = lines[0].split(',');
-  return lines.slice(1).map(l => {
-    const obj = {};
-    l.split(',').forEach((v,i) => obj[header[i]] = v);
-    return obj;
-  });
-}
+# station_g_cd → 駅名（代表）
+station_g_to_name = (
+    station.groupby("station_g_cd")["station_name"]
+    .first()
+    .to_dict()
+)
 
-// BFS
-function bfs(adj, start, goal) {
-  const q = [start];
-  const prev = {};
-  prev[start] = null;
+# =========================
+# 隣接リスト作成（station_g_cd単位）
+# =========================
+adj = {}
 
-  while (q.length) {
-    const cur = q.shift();
-    if (cur === goal) break;
-    for (const nxt of adj[cur] || []) {
-      if (!(nxt in prev)) {
-        prev[nxt] = cur;
-        q.push(nxt);
-      }
-    }
-  }
+for _, row in jr_joins.iterrows():
+    cd1 = row["station_cd1"]
+    cd2 = row["station_cd2"]
 
-  if (!(goal in prev)) return null;
+    if cd1 not in station_cd_to_g or cd2 not in station_cd_to_g:
+        continue
 
-  const path = [];
-  for (let v = goal; v !== null; v = prev[v]) path.push(v);
-  return path.reverse();
-}
+    g1 = station_cd_to_g[cd1]
+    g2 = station_cd_to_g[cd2]
 
-async function run() {
-  const result = document.getElementById("result");
-  result.textContent = "読み込み中…";
+    if g1 == g2:
+        continue
 
-  const [lines, stations, joins] = await Promise.all([
-    loadCSV(lineURL),
-    loadCSV(stationURL),
-    loadCSV(joinURL)
-  ]);
+    adj.setdefault(g1, set()).add(g2)
+    adj.setdefault(g2, set()).add(g1)
 
-  // station_cd → station_g_cd
-  const cdToG = {};
-  stations.forEach(s => {
-    cdToG[String(s.station_cd)] = String(s.station_g_cd);
-  });
+# =========================
+# BFS 最短経路
+# =========================
+def bfs_shortest_path(adj, start, goal):
+    visited = set()
+    queue = deque([[start]])
 
-  // station_g_cd → station_name
-  const gToName = {};
-  stations.forEach(s => {
-    if (!(s.station_g_cd in gToName)) {
-      gToName[String(s.station_g_cd)] = s.station_name;
-    }
-  });
+    while queue:
+        path = queue.popleft()
+        node = path[-1]
 
-  // 駅名 → station_g_cd
-  const nameToG = {};
-  Object.entries(gToName).forEach(([g,n]) => nameToG[n] = g);
+        if node == goal:
+            return path
 
-  // JR西日本の line_cd
-  const jrLines = new Set(
-    lines.filter(l => l.company_cd === "4").map(l => l.line_cd)
-  );
+        if node in visited:
+            continue
 
-  // 隣接リスト
-  const adj = {};
-  joins.forEach(j => {
-    if (!jrLines.has(j.line_cd)) return;
-    const a = cdToG[j.station_cd1];
-    const b = cdToG[j.station_cd2];
-    if (!a || !b || a === b) return;
+        visited.add(node)
 
-    adj[a] = adj[a] || [];
-    adj[b] = adj[b] || [];
-    adj[a].push(b);
-    adj[b].push(a);
-  });
+        for nxt in adj.get(node, []):
+            if nxt not in visited:
+                queue.append(path + [nxt])
 
-  const startName = document.getElementById("start").value;
-  const goalName = document.getElementById("goal").value;
+    return None
 
-  const start = nameToG[startName];
-  const goal = nameToG[goalName];
+# =========================
+# スタート駅（甲南山手）
+# =========================
+START_G_CD = "1160308"
 
-  if (!start || !goal) {
-    result.textContent = "駅名が見つかりません";
-    return;
-  }
+# ゴールが見つかるまで引き直す
+all_candidates = list(adj.keys())
 
-  const path = bfs(adj, start, goal);
-  if (!path) {
-    result.textContent = "経路が見つかりません";
-    return;
-  }
+path = None
+end_g_cd = None
 
-  const names = path.map(g => gToName[g]);
-  result.textContent =
-    `ゴール駅: ${goalName}\n\n経路:\n` +
-    names.join(" → ");
-}
-</script>
+while path is None:
+    end_g_cd = random.choice(all_candidates)
+    if end_g_cd == START_G_CD:
+        continue
+    path = bfs_shortest_path(adj, START_G_CD, end_g_cd)
 
-</body>
-</html>
+# =========================
+# 結果表示
+# =========================
+print("最短経路：")
+for g in path:
+    print(station_g_to_name.get(g, g))
+
+print("\nスタート:", station_g_to_name[START_G_CD], f"({START_G_CD})")
+print("ゴール:", station_g_to_name[end_g_cd], f"({end_g_cd})")
