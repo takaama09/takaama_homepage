@@ -154,7 +154,7 @@ document.getElementById('searchBtn').addEventListener('click', async () => {
 
     const marker = L.circleMarker(ll, {
       radius: i === 0 || i === path.length - 1 ? 10 : 5,
-      color: i === 0 ? 'red' : i === path.length - 1 ? 'blue' : '#333',
+      color: i === 0 ? 'red' : i === path.length - 1 ? 'red' : '#333',
       fillOpacity: 1
     }).addTo(map).bindPopup(info.name);
 
