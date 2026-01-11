@@ -101,9 +101,9 @@ function bfsShortestPath(adj, start, goal) {
     stationCdToG[station_cd] = g;
     
     // station_g_cd の代表駅（最初の1件だけ）
-    if (!stationGInfo[station_g_cd]) {
-      stationGInfo[station_g_cd] = {
-        name: station_name,
+    if (!stationGInfo[g]) {
+      stationGInfo[g] = {
+        name: name,
         lat: lat,
         lon: lon
       };
