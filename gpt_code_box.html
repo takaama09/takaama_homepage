@@ -341,18 +341,24 @@ function refreshCompanyDropdown() {
     companyTypeSelect.appendChild(opt);
   });
 
-  companyTypeSelect.addEventListener('change', () => {
-    companySelect.innerHTML = '<option value="">選択してください</option>';
-    lineSelect.innerHTML = '<option value="">選択してください</option>';
-    const type = companyTypeSelect.value;
-    if (!type || !companiesByType[type]) return;
-    companiesByType[type].forEach(c => {
+companyTypeSelect.addEventListener('change', () => {
+  companySelect.innerHTML = '<option value="">選択してください</option>';
+  lineSelect.innerHTML = '<option value="">選択してください</option>';
+  startSelect.innerHTML = '<option value="">選択してください</option>';
+
+  const type = companyTypeSelect.value;
+  if (!type || !companiesByType[type]) return;
+
+  companiesByType[type]
+    .filter(c => allowedCompanies.includes(c.cd)) // ← チェックされている会社だけ
+    .forEach(c => {
       const opt = document.createElement('option');
       opt.value = c.cd;
       opt.textContent = c.name;
       companySelect.appendChild(opt);
     });
-  });
+});
+
 
   companySelect.addEventListener('change', () => {
     lineSelect.innerHTML = '<option value="">選択してください</option>';
