@@ -33,7 +33,19 @@
 <h2>最強の鉄道旅行計画を立てよう！</h2>
 
 <div style="margin-bottom:10px;">
-  <button id="btn18Kippu">18きっぷ</button>
+  <button id="btn18Kippu">青春18きっぷ</button>
+</div>
+
+<div style="margin-bottom:10px;">
+  <button id="btnHokkaiEast">北海道東日本パス</button>
+</div>
+
+<div style="margin-bottom:10px;">
+  <button id="btnKyushu">旅名人の九州満喫きっぷ</button>
+</div>
+
+<div style="margin-bottom:10px;">
+  <button id="btnTokai16">ＪＲ東海＆16私鉄 乗り鉄☆たびきっぷ</button>
 </div>
 
 
@@ -332,7 +344,8 @@ function refreshCompanyDropdown() {
 
   generateCompanyCheckboxes();
 
-  //特殊ボタン設定
+  //----------------------------------------------
+  //特殊ボタン設定（18きっぷ）
   document.getElementById('btn18Kippu').addEventListener('click', () => {
   // JR の type は '1'
   const jrType = '1';
@@ -349,7 +362,56 @@ function refreshCompanyDropdown() {
   updateAllowedCompanies();
 });
 
+　//特殊ボタン設定（旅名人）
+document.getElementById('btnKyushu').addEventListener('click', () => {
+  // 九州満喫きっぷ対応会社リスト
+  const kyushuCompanies = [
+    '6', // JR九州
+    '232', //北九州高速鉄道
+    '230', //平成筑豊鉄道
+    '233', //筑豊電鉄
+    '231', //福岡市地下鉄（多分）
+    '26', //西鉄
+    '229', //甘木鉄道
+    '234', //松浦鉄道
+    '235', //島原鉄道
+    '237', //熊本電鉄
+    '241', //熊本市電（多分）
+    '238', //南阿蘇鉄道
+    '239', //くま川鉄道
+    '240', //肥薩おれんじ鉄道
+    '242', //鹿児島市電
+  ];
 
+  // まず全ての上位チェックボックスOFF
+  document.querySelectorAll('#companyCheckboxes input[type=checkbox].top').forEach(cb => cb.checked = false);
+
+  // 全子会社OFF
+  document.querySelectorAll('#companyCheckboxes input[data-company-type]').forEach(cb => cb.checked = false);
+
+  // 九州満喫きっぷ対象会社のみON
+  document.querySelectorAll('#companyCheckboxes input[data-company-type]').forEach(cb => {
+    if (kyushuCompanies.includes(cb.value)) cb.checked = true;
+  });
+
+  // 上位チェックもONにする
+  const typesToCheck = new Set();
+  kyushuCompanies.forEach(cd => {
+    const cb = document.querySelector('#companyCheckboxes input[data-company-type][value="'+cd+'"]');
+    if (cb) typesToCheck.add(cb.dataset.companyType);
+  });
+  typesToCheck.forEach(type => {
+    const topCb = document.querySelector('#companyCheckboxes input[type=checkbox].top[data-company-type="'+type+'"]');
+    if (topCb) topCb.checked = true;
+  });
+
+  // allowedCompanies 更新＆プルダウン同期
+  updateAllowedCompanies();
+});
+
+
+//------------------------------------------------
+  
   // ===== プルダウン連動 =====
   const companyTypeSelect = document.getElementById('companyTypeSelect');
   const companySelect = document.getElementById('companySelect');
