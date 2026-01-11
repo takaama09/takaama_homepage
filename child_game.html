@@ -4,15 +4,53 @@
 <meta charset="UTF-8">
 <title>溜め攻撃ゲーム</title>
 <style>
-  body { font-family: sans-serif; text-align: center; margin-top: 50px; }
-  button { margin: 5px; padding: 10px 20px; font-size: 16px; }
-  #log { margin-top: 20px; white-space: pre-line; font-size: 18px; }
-  #result { margin-top: 20px; font-size: 24px; font-weight: bold; }
+  body { 
+    font-family: sans-serif; 
+    text-align: center; 
+    margin: 20px; 
+    padding: 0 10px; 
+  }
+
+  button { 
+    margin: 5px; 
+    padding: 15px 25px; 
+    font-size: 5vw; /* 画面幅に応じて文字サイズ */
+    min-width: 80px; /* 小さすぎないように最小幅 */
+    min-height: 50px;
+  }
+
+  #log { 
+    margin-top: 20px; 
+    white-space: pre-line; 
+    font-size: 4vw; /* 画面幅に応じて文字サイズ */
+  }
+
+  #result { 
+    margin-top: 20px; 
+    font-size: 6vw; 
+    font-weight: bold; 
+  }
+
   .win { color: green; }
   .lose { color: red; }
   .draw { color: gray; }
-  #replay { display: none; margin-top: 20px; padding: 10px 20px; font-size: 16px; }
+
+  #replay { 
+    display: none; 
+    margin-top: 20px; 
+    padding: 12px 25px; 
+    font-size: 5vw; 
+  }
+
+  /* スマホ画面向け微調整 */
+  @media (max-width: 480px) {
+    button { padding: 18px 30px; }
+    #log { font-size: 5vw; }
+    #result { font-size: 7vw; }
+    #replay { font-size: 6vw; padding: 15px 30px; }
+  }
 </style>
+
 </head>
 <body>
 
