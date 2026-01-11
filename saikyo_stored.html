@@ -101,7 +101,7 @@ const joinURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/ma
 const companyURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station/company.csv';
 
 // JR西日本だけ
-const allowedCompanies = ['4'];
+const allowedCompanies = [];
 
 // BFS
 function bfsShortestPath(adj, start, goal, allowedCompanies) {
@@ -205,42 +205,88 @@ function bfsShortestPath(adj, start, goal, allowedCompanies) {
   allG = Object.keys(adj);
 
   // ===== チェックボックス生成 =====
-  function generateCompanyCheckboxes() {
-    const container = document.getElementById('companyCheckboxes');
-    container.innerHTML = '';
+ function generateCompanyCheckboxes() {
+  const container = document.getElementById('companyCheckboxes');
+  container.innerHTML = '';
 
-    const companyTypeLabel = { '1':'JR', '2':'大手私鉄', '3':'準大手私鉄', '0':'その他' };
-    const companyTypeOrder = ['1','2','3','0'];
+  const companyTypeLabel = { '1':'JR', '2':'大手私鉄', '3':'準大手私鉄', '0':'その他' };
+  const companyTypeOrder = ['1','2','3','0'];
 
-    companyTypeOrder.forEach(type => {
-      if (!companiesByType[type]) return;
-      const typeDiv = document.createElement('div');
-      typeDiv.style.marginBottom = '8px';
+  companyTypeOrder.forEach(type => {
+    if (!companiesByType[type]) return;
 
-      const typeTitle = document.createElement('strong');
-      typeTitle.textContent = companyTypeLabel[type] || type;
-      typeDiv.appendChild(typeTitle);
+    const typeDiv = document.createElement('div');
+    typeDiv.style.marginBottom = '8px';
 
-      companiesByType[type].forEach(c => {
-        const label = document.createElement('label');
-        label.style.display = 'block';
-        label.style.marginLeft = '16px';
-        label.style.cursor = 'pointer';
+    // 折りたたみ用ボタン
+    const toggleBtn = document.createElement('span');
+    toggleBtn.textContent = '▶'; // 初期は閉じた状態
+    toggleBtn.style.cursor = 'pointer';
+    toggleBtn.style.marginRight = '4px';
+    toggleBtn.style.userSelect = 'none';
 
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.value = c.cd;
-        checkbox.checked = allowedCompanies.includes(c.cd);
-        checkbox.addEventListener('change', updateAllowedCompanies);
+    // 上位チェックボックス（事業者区分）
+    const typeLabel = document.createElement('label');
+    typeLabel.style.display = 'inline-block';
+    typeLabel.style.cursor = 'pointer';
 
-        label.appendChild(checkbox);
-        label.appendChild(document.createTextNode(' ' + c.name));
-        typeDiv.appendChild(label);
+    const typeCheckbox = document.createElement('input');
+    typeCheckbox.type = 'checkbox';
+    typeCheckbox.checked = companiesByType[type].every(c => allowedCompanies.includes(c.cd));
+
+    typeCheckbox.addEventListener('change', () => {
+      const childCheckboxes = typeDiv.querySelectorAll('input[data-company-type="'+type+'"]');
+      childCheckboxes.forEach(cb => {
+        cb.checked = typeCheckbox.checked;
       });
-
-      container.appendChild(typeDiv);
+      updateAllowedCompanies();
     });
-  }
+
+    typeLabel.appendChild(typeCheckbox);
+    typeLabel.appendChild(document.createTextNode(' ' + (companyTypeLabel[type] || type)));
+
+    // トグルで下位会社を折りたたむ
+    const childDiv = document.createElement('div');
+    childDiv.style.marginLeft = '16px';
+    childDiv.style.display = 'none'; // 初期は閉じておく
+
+    toggleBtn.addEventListener('click', () => {
+      if (childDiv.style.display === 'none') {
+        childDiv.style.display = 'block';
+        toggleBtn.textContent = '▼'; // 開いた状態
+      } else {
+        childDiv.style.display = 'none';
+        toggleBtn.textContent = '▶'; // 閉じた状態
+      }
+    });
+
+    typeDiv.appendChild(toggleBtn);
+    typeDiv.appendChild(typeLabel);
+
+    // 子会社チェックボックス
+    companiesByType[type].forEach(c => {
+      const label = document.createElement('label');
+      label.style.display = 'block';
+      label.style.marginLeft = '16px';
+      label.style.cursor = 'pointer';
+
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.value = c.cd;
+      checkbox.checked = allowedCompanies.includes(c.cd);
+      checkbox.dataset.companyType = type;
+      checkbox.addEventListener('change', updateAllowedCompanies);
+
+      label.appendChild(checkbox);
+      label.appendChild(document.createTextNode(' ' + c.name));
+      childDiv.appendChild(label);
+    });
+
+    typeDiv.appendChild(childDiv);
+    container.appendChild(typeDiv);
+  });
+}
+
 
   function updateAllowedCompanies() {
     const checkboxes = document.querySelectorAll('#companyCheckboxes input[type=checkbox]');
