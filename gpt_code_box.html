@@ -87,6 +87,8 @@ let stationGInfo = {};
 let allG = [];
 let mapLayers = [];
 let companiesByType = {}; 
+let linesByCompany = {};
+
 
 
 // CSV URL
@@ -146,8 +148,25 @@ function bfsShortestPath(adj, start, goal) {
   const jrLines = new Set();
   lineText.replace(/\r/g,'').split('\n').slice(1).forEach(r => {
     const c = r.split(',');
-    if (c[1] === '4') jrLines.add(c[0]);
+    //if (c[1] === '4') jrLines.add(c[0]);　//この辺あとで修正？
+
+    if (c.length < 10) return;
+
+    const line_cd = c[0];
+    const company_cd = c[1];
+    const line_name = c[2];
+
+
+  if (!linesByCompany[company_cd]) {
+    linesByCompany[company_cd] = [];
+  }
+
+  linesByCompany[company_cd].push({
+    cd: line_cd,
+    name: line_name
   });
+});
+
 
   const stationCdToG = {};
   stationText.replace(/\r/g,'').split('\n').slice(1).forEach(r => {
@@ -260,14 +279,17 @@ companyTypeSelect.addEventListener('change', () => {
 companySelect.addEventListener('change', () => {
   lineSelect.innerHTML = '<option value="">選択してください</option>';
 
-  // const lines = LINES[companySelect.value] || [];
-  // lines.forEach(l => {
-  //   const opt = document.createElement('option');
-  //   opt.value = l.value;
-  //   opt.textContent = l.label;
-  //   lineSelect.appendChild(opt);
-  // });
+  const companyCd = companySelect.value;
+  if (!companyCd || !linesByCompany[companyCd]) return;
+
+  linesByCompany[companyCd].forEach(l => {
+    const opt = document.createElement('option');
+    opt.value = l.cd;
+    opt.textContent = l.name;
+    lineSelect.appendChild(opt);
+  });
 });
+
 
 
   //プルダウン選択
