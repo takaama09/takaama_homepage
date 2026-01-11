@@ -10,7 +10,7 @@ pre { background: #f5f5f5; padding: 10px; }
 </head>
 <body>
 
-<h2>JR西日本</h2>
+<h2>JR西日本　旅行計画</h2>
 <button id="run">実行</button>
 
 <pre id="output">未実行</pre>
@@ -29,18 +29,40 @@ const joinURL =
 // =========================
 // CSV 読み込み（pandas.read_csv 相当）
 /* ======================= */
+// async function loadCSV(url) {
+//   const text = await fetch(url).then(r => r.text());
+//   const lines = text.trim().split('\n');
+//   const header = lines[0].split(',');
+
+//   return lines.slice(1).map(line => {
+//     const cols = line.split(',');
+//     const obj = {};
+//     header.forEach((h, i) => obj[h] = cols[i]);
+//     return obj;
+//   });
+// }
+
 async function loadCSV(url) {
   const text = await fetch(url).then(r => r.text());
-  const lines = text.trim().split('\n');
-  const header = lines[0].split(',');
+
+  const lines = text
+    .replace(/\r/g, '')        // CR除去
+    .replace(/^\uFEFF/, '')    // BOM除去
+    .trim()
+    .split('\n');
+
+  const header = lines[0].split(',').map(h => h.trim());
 
   return lines.slice(1).map(line => {
-    const cols = line.split(',');
+    const cols = line.split(',').map(c => c.trim());
     const obj = {};
-    header.forEach((h, i) => obj[h] = cols[i]);
+    header.forEach((h, i) => {
+      obj[h] = cols[i];
+    });
     return obj;
   });
 }
+
 
 // =========================
 // BFS（Pythonと同じ実装）
