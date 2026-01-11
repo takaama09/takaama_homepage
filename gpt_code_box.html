@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>準備中...</title>
+<title>準備中</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <style>
@@ -305,23 +305,18 @@ function updateAllowedCompanies() {
 function refreshCompanyDropdown() {
   companySelect.innerHTML = '<option value="">選択してください</option>';
   
-  // 選択されている事業者区分だけ
-  const checkedTypes = [];
-  document.querySelectorAll('#companyCheckboxes > div > label > input[type=checkbox]').forEach(typeCb => {
-    if (typeCb.checked) checkedTypes.push(typeCb.parentNode.textContent.trim());
-  });
+  // 上位チェックされている事業者区分の子会社だけ取得
+  Object.keys(companiesByType).forEach(type => {
+    const typeDiv = document.querySelector('#companyCheckboxes > div:nth-child(' + (parseInt(type)+1) + ')');
+    if (!typeDiv) return;
 
-  // 上位チェックボックスを取得
-  const typeDivs = document.querySelectorAll('#companyCheckboxes > div');
-  typeDivs.forEach(div => {
-    const typeCheckbox = div.querySelector('input[type=checkbox]');
-    const type = Object.keys(companiesByType).find(t => companiesByType[t].some(c => c.name === div.textContent.trim()));
+    const typeCheckbox = typeDiv.querySelector('input[type=checkbox]');
     if (!typeCheckbox.checked) return; // 上位未チェックならスキップ
 
-    // 上位チェックされている事業者区分の子会社のみ
-    const childCheckboxes = div.querySelectorAll('input[data-company-type="'+type+'"]');
+    // 子会社チェックされているものだけ
+    const childCheckboxes = typeDiv.querySelectorAll('input[data-company-type="'+type+'"]');
     childCheckboxes.forEach(cb => {
-      if (!cb.checked) return; // 子会社未チェックならスキップ
+      if (!cb.checked) return;
       const company = companiesByType[type].find(c => c.cd === cb.value);
       if (!company) return;
       const opt = document.createElement('option');
@@ -331,10 +326,11 @@ function refreshCompanyDropdown() {
     });
   });
 
-  // 会社プルダウン変更で路線プルダウン更新
+  // 会社プルダウン選択時に路線プルダウンも更新
   lineSelect.innerHTML = '<option value="">選択してください</option>';
   startSelect.innerHTML = '<option value="">選択してください</option>';
 }
+
 
 
 
