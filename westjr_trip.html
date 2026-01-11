@@ -2,147 +2,146 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>JR西日本経路探索（station_g_cd版）</title>
+<title>JR西日本 最短ルート探索</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <style>
   #map { height: 80vh; width: 100%; }
-  #info { padding: 10px; font-size: 14px; }
+  #info { padding:10px; font-family:sans-serif; }
 </style>
 </head>
 <body>
-<h2>JR西日本経路探索！</h2>
+<h2>JR西日本 最短ルート探索</h2>
 <div id="info"></div>
 <div id="map"></div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
-const map = L.map('map').setView([35, 135], 6);
+const map = L.map('map').setView([35.5, 135], 6);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
 // CSV URL
-const lineURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station/line.csv';
 const stationURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station/station.csv';
-const joinURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station/join.csv';
+const joinURL    = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station/join.csv';
+const lineURL    = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station/line.csv';
+
+// 最寄駅の station_g_cd
+const start_gcd = '1160308';
 
 (async () => {
     try {
-        const [lineRes, stationRes, joinRes] = await Promise.all([
-            fetch(lineURL), fetch(stationURL), fetch(joinURL)
+        const [stationRes, joinRes, lineRes] = await Promise.all([
+            fetch(stationURL), fetch(joinURL), fetch(lineURL)
         ]);
-        const lineData = await lineRes.text();
-        const stationData = await stationRes.text();
-        const joinData = await joinRes.text();
+        const stationText = await stationRes.text();
+        const joinText = await joinRes.text();
+        const lineText = await lineRes.text();
 
-        // -----------------------------
-        // JR西日本の路線抽出
-        // -----------------------------
-        const jrWestLineSet = new Set();
-        lineData.replace(/\r/g,'').split('\n').slice(1).forEach(row => {
-            const cols = row.split(',').map(c => c.trim());
-            const line_cd = cols[0];
-            const company_cd = parseInt(cols[1]);
-            if(company_cd === 4) jrWestLineSet.add(line_cd);
-        });
+        // CSVを2次元配列に
+        function parseCSV(text){ return text.replace(/\r/g,'').split('\n').map(r=>r.split(',')); }
 
-        // -----------------------------
-        // JR西日本駅（station_g_cdでユニーク化）
-        // -----------------------------
-        const stationsMap = {}; // key: station_g_cd, value: {name, lat, lon}
-        stationData.replace(/\r/g,'').split('\n').slice(1).forEach(row => {
-            const cols = row.split(',').map(c => c.trim());
-            const station_g_cd = cols[1]; // station_g_cd
-            const line_cd = cols[5];
-            if(!jrWestLineSet.has(line_cd)) return;
-            const name = cols[2];
-            const lat = parseFloat(cols[10]);
-            const lon = parseFloat(cols[9]);
-            if(!stationsMap[station_g_cd]) {
-                stationsMap[station_g_cd] = {name, lat, lon};
-            }
-        });
+        const stationData = parseCSV(stationText);
+        const joinData = parseCSV(joinText);
+        const lineData = parseCSV(lineText);
 
-        // -----------------------------
-        // 隣接駅グラフ作成（station_g_cdで）
-        // -----------------------------
+        // JR西日本の路線
+        const jrwestLines = new Set(lineData.slice(1)
+            .filter(r => parseInt(r[1])===4)
+            .map(r => r[0]));
+
+        // station_g_cd -> station_cd[]
+        const gcd_to_cd = {};
+        // station_cd -> {name, lat, lon, gcd}
+        const stationMap = {};
+        for(let i=1;i<stationData.length;i++){
+            const row = stationData[i];
+            const line_cd = row[5];
+            const company_cd = lineData.find(r=>r[0]===line_cd)?.[1];
+            if(!jrwestLines.has(line_cd)) continue;
+            const station_cd = row[0].trim();
+            const station_gcd = row[1].trim();
+            const name = row[2].trim();
+            const lat = parseFloat(row[10]);
+            const lon = parseFloat(row[9]);
+            if(!gcd_to_cd[station_gcd]) gcd_to_cd[station_gcd] = [];
+            gcd_to_cd[station_gcd].push(station_cd);
+            stationMap[station_cd] = {name, lat, lon, gcd: station_gcd};
+        }
+
+        // graph 作成（station_g_cdベース）
         const graph = {};
-        joinData.replace(/\r/g,'').split('\n').slice(1).forEach(row => {
-            const cols = row.split(',').map(c => c.trim());
-            const s1_cd = cols[1];
-            const s2_cd = cols[2];
-            // station_cd -> station_g_cd に変換
-            let s1_g = null, s2_g = null;
-            for(const g in stationsMap){
-                if(g === s1_cd) s1_g = g;
-                if(g === s2_cd) s2_g = g;
-            }
-            // 両方ともJR西日本駅なら追加
-            if(!s1_g || !s2_g) return;
-            if(!graph[s1_g]) graph[s1_g] = [];
-            if(!graph[s2_g]) graph[s2_g] = [];
-            if(!graph[s1_g].includes(s2_g)) graph[s1_g].push(s2_g);
-            if(!graph[s2_g].includes(s1_g)) graph[s2_g].push(s1_g);
-        });
+        for(let i=1;i<joinData.length;i++){
+            const s1 = joinData[i][1].trim();
+            const s2 = joinData[i][2].trim();
+            if(!stationMap[s1] || !stationMap[s2]) continue;
+            const g1 = stationMap[s1].gcd;
+            const g2 = stationMap[s2].gcd;
+            if(g1===g2) continue;
+            if(!graph[g1]) graph[g1]=new Set();
+            if(!graph[g2]) graph[g2]=new Set();
+            graph[g1].add(g2);
+            graph[g2].add(g1);
+        }
 
-        // -----------------------------
+        // graphのSetを配列に変換
+        for(let k in graph) graph[k] = Array.from(graph[k]);
+
+        // ランダムに目的駅を選ぶ（startと違うもの）
+        const gcdList = Object.keys(graph).filter(g=>g!==start_gcd);
+        const goal_gcd = gcdList[Math.floor(Math.random()*gcdList.length)];
+
+        document.getElementById('info').innerHTML = `最寄駅: ${start_gcd} <br> 目的駅: ${goal_gcd}`;
+
         // BFSで最短経路探索
-        // -----------------------------
-        function bfsPath(graph, start, goal) {
+        function bfs(graph, start, goal){
             const queue = [[start]];
             const visited = new Set([start]);
-            while(queue.length > 0){
+            while(queue.length>0){
                 const path = queue.shift();
                 const node = path[path.length-1];
-                if(node === goal) return path;
-                for(const neighbor of graph[node] || []){
-                    if(!visited.has(neighbor)){
-                        visited.add(neighbor);
-                        queue.push([...path, neighbor]);
+                if(node===goal) return path;
+                for(const neigh of graph[node] || []){
+                    if(!visited.has(neigh)){
+                        visited.add(neigh);
+                        queue.push([...path, neigh]);
                     }
                 }
             }
             return null;
         }
 
-        // -----------------------------
-        // 最寄駅とランダム駅選択
-        // -----------------------------
-        const startStationG = '1160308'; // 仮：最寄駅のstation_g_cd
-        const jrWestGStations = Object.keys(stationsMap).filter(g => g !== startStationG);
-        const goalStationG = jrWestGStations[Math.floor(Math.random()*jrWestGStations.length)];
+        const route = bfs(graph, start_gcd, goal_gcd);
+        if(!route) alert('経路が見つかりませんでした');
+        else{
+            const names = route.map(gcd=>{
+                const cds = gcd_to_cd[gcd];
+                return stationMap[cds[0]].name;
+            });
+            document.getElementById('info').innerHTML += `<br> 経路: ${names.join(' → ')}`;
 
-        const route = bfsPath(graph, startStationG, goalStationG);
+            // 地図に駅マーカー
+            route.forEach(gcd=>{
+                const cds = gcd_to_cd[gcd];
+                const cd = cds[0];
+                const s = stationMap[cd];
+                L.circleMarker([s.lat, s.lon], {radius:5, color:'blue'}).addTo(map)
+                  .bindPopup(s.name);
+            });
 
-        // -----------------------------
-        // 結果表示
-        // -----------------------------
-        const infoDiv = document.getElementById('info');
-        if(!route){
-            infoDiv.innerHTML = `経路が見つかりませんでした`;
-            return;
+            // ルートを赤線で
+            const latlngs = route.map(gcd=>{
+                const cds = gcd_to_cd[gcd];
+                const cd = cds[0];
+                const s = stationMap[cd];
+                return [s.lat, s.lon];
+            });
+            L.polyline(latlngs,{color:'red',weight:4}).addTo(map);
+            map.fitBounds(latlngs);
         }
-        const routeNames = route.map(g => stationsMap[g].name);
-        infoDiv.innerHTML = `最寄駅: ${stationsMap[startStationG].name} → 目的地: ${stationsMap[goalStationG].name}<br>
-                             経由駅: ${routeNames.join(' → ')}`;
 
-        // -----------------------------
-        // 地図表示
-        // -----------------------------
-        route.forEach(g => {
-            const s = stationsMap[g];
-            L.circleMarker([s.lat, s.lon], {radius:5, color:'blue'}).addTo(map)
-                .bindPopup(s.name);
-        });
-        const latlngs = route.map(g => [stationsMap[g].lat, stationsMap[g].lon]);
-        L.polyline(latlngs, {color:'red', weight:4}).addTo(map);
-        map.fitBounds(latlngs);
-
-    } catch(err){
-        console.error(err);
-        alert('CSV読み込みまたは路線図作成中にエラー発生');
-    }
+    } catch(e){ console.error(e); alert('読み込みエラー'); }
 })();
 </script>
 </body>
