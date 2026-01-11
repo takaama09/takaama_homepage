@@ -2,152 +2,130 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>JR西日本経路検索</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<style>
-  body { margin: 0; padding: 0; font-family: sans-serif; }
-  #map { width: 100%; height: 70vh; }
-  #info { padding: 10px; height: 30vh; overflow-y: auto; background: #f0f0f0; }
-  #info h3 { margin: 5px 0; }
-</style>
+<title>JR経路探索</title>
 </head>
 <body>
 
-<div id="map"></div>
-<div id="info">
-  <h3>経路情報</h3>
-  <div id="routeText">読み込み中...</div>
-</div>
+<h2>JR西日本 最短経路探索</h2>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+開始駅: <input id="start" value="大阪">
+ゴール駅: <input id="goal" value="姫路">
+<button onclick="run()">探索</button>
+
+<pre id="result"></pre>
 
 <script>
 // CSV URL
-const stationURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/station/station.csv';
 const lineURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/station/line.csv';
+const stationURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/station/station.csv';
 const joinURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/station/join.csv';
 
-// JR西日本 company_cd
-const jr_company_cd = 4;
-const start_station_g_cd = 1160308; // 甲南山手駅
-
-// CSV をフェッチして解析
-async function loadData() {
-  const [stationResp, lineResp, joinResp] = await Promise.all([
-    fetch(stationURL), fetch(lineURL), fetch(joinURL)
-  ]);
-  const [stationText, lineText, joinText] = await Promise.all([
-    stationResp.text(), lineResp.text(), joinResp.text()
-  ]);
-
-  // dynamicTyping:false で文字列として扱う
-  const stations = Papa.parse(stationText, {header:true, skipEmptyLines:true, dynamicTyping:false}).data;
-  const lines = Papa.parse(lineText, {header:true, skipEmptyLines:true, dynamicTyping:false}).data;
-  const joins = Papa.parse(joinText, {header:true, skipEmptyLines:true, dynamicTyping:false}).data;
-
-  return {stations, lines, joins};
+// CSV 読み込み
+async function loadCSV(url) {
+  const text = await fetch(url).then(r => r.text());
+  const lines = text.trim().split('\n');
+  const header = lines[0].split(',');
+  return lines.slice(1).map(l => {
+    const obj = {};
+    l.split(',').forEach((v,i) => obj[header[i]] = v);
+    return obj;
+  });
 }
 
-// データ処理
-function processData(stations, lines, joins) {
-  // JR西日本 line_cd のセット
-  const jrLines = new Set(lines.filter(l => l.company_cd === jr_company_cd).map(l => l.line_cd));
+// BFS
+function bfs(adj, start, goal) {
+  const q = [start];
+  const prev = {};
+  prev[start] = null;
 
-  // station_cd -> station_g_cd
-  const station_cd_to_g = {};
-  stations.forEach(s => { station_cd_to_g[String(s.station_cd)] = String(s.station_g_cd); });
+  while (q.length) {
+    const cur = q.shift();
+    if (cur === goal) break;
+    for (const nxt of adj[cur] || []) {
+      if (!(nxt in prev)) {
+        prev[nxt] = cur;
+        q.push(nxt);
+      }
+    }
+  }
 
-  // station_g_cd -> info
-  const station_g_to_info = {};
+  if (!(goal in prev)) return null;
+
+  const path = [];
+  for (let v = goal; v !== null; v = prev[v]) path.push(v);
+  return path.reverse();
+}
+
+async function run() {
+  const result = document.getElementById("result");
+  result.textContent = "読み込み中…";
+
+  const [lines, stations, joins] = await Promise.all([
+    loadCSV(lineURL),
+    loadCSV(stationURL),
+    loadCSV(joinURL)
+  ]);
+
+  // station_cd → station_g_cd
+  const cdToG = {};
   stations.forEach(s => {
-    const g_cd = String(s.station_g_cd);
-    if (!station_g_to_info[g_cd]) {
-      station_g_to_info[g_cd] = {
-        name: s.station_name,
-        lat: parseFloat(s.lat),
-        lon: parseFloat(s.lon)
-      };
+    cdToG[String(s.station_cd)] = String(s.station_g_cd);
+  });
+
+  // station_g_cd → station_name
+  const gToName = {};
+  stations.forEach(s => {
+    if (!(s.station_g_cd in gToName)) {
+      gToName[String(s.station_g_cd)] = s.station_name;
     }
   });
 
-  // 隣接リスト作成
+  // 駅名 → station_g_cd
+  const nameToG = {};
+  Object.entries(gToName).forEach(([g,n]) => nameToG[n] = g);
+
+  // JR西日本の line_cd
+  const jrLines = new Set(
+    lines.filter(l => l.company_cd === "4").map(l => l.line_cd)
+  );
+
+  // 隣接リスト
   const adj = {};
   joins.forEach(j => {
     if (!jrLines.has(j.line_cd)) return;
-    const st1 = station_cd_to_g[String(j.station_cd1)];
-    const st2 = station_cd_to_g[String(j.station_cd2)];
-    if (!st1 || !st2 || st1 === st2) return;
-    adj[st1] = adj[st1] || new Set();
-    adj[st2] = adj[st2] || new Set();
-    adj[st1].add(st2);
-    adj[st2].add(st1);
+    const a = cdToG[j.station_cd1];
+    const b = cdToG[j.station_cd2];
+    if (!a || !b || a === b) return;
+
+    adj[a] = adj[a] || [];
+    adj[b] = adj[b] || [];
+    adj[a].push(b);
+    adj[b].push(a);
   });
 
-  // Set を配列に変換
-  for (let k in adj) adj[k] = Array.from(adj[k]);
+  const startName = document.getElementById("start").value;
+  const goalName = document.getElementById("goal").value;
 
-  return {station_g_to_info, adj};
-}
+  const start = nameToG[startName];
+  const goal = nameToG[goalName];
 
-// BFS 最短経路
-function bfsShortestPath(adj, start, goal) {
-  const visited = new Set();
-  const queue = [[start]];
-  while (queue.length>0) {
-    const path = queue.shift();
-    const node = path[path.length-1];
-    if (node === goal) return path;
-    if (!visited.has(node)) {
-      visited.add(node);
-      (adj[node]||[]).forEach(n => queue.push([...path, n]));
-    }
-  }
-  return null;
-}
-
-// 地図描画
-function drawMap(station_g_to_info, adj, path) {
-  const map = L.map('map').setView([34.69, 135.20], 13);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19}).addTo(map);
-
-  const markers = {};
-  for (const g_cd in station_g_to_info) {
-    const st = station_g_to_info[g_cd];
-    markers[g_cd] = L.circleMarker([st.lat, st.lon], {radius:5, color:'black'})
-      .bindPopup(st.name)
-      .addTo(map);
+  if (!start || !goal) {
+    result.textContent = "駅名が見つかりません";
+    return;
   }
 
-  const infoDiv = document.getElementById('routeText');
-
-  if (path) {
-    const latlngs = path.map(g_cd => [station_g_to_info[g_cd].lat, station_g_to_info[g_cd].lon]);
-    L.polyline(latlngs, {color:'red', weight:4}).addTo(map);
-
-    markers[path[0]].setStyle({color:'green', radius:7});
-    markers[path[path.length-1]].setStyle({color:'blue', radius:7});
-
-    const names = path.map(g => station_g_to_info[g].name);
-    infoDiv.innerHTML = `<strong>スタート:</strong> ${names[0]}<br>` +
-                        `<strong>ゴール:</strong> ${names[names.length-1]}<br>` +
-                        `<strong>経路:</strong> ${names.join(' → ')}`;
-  } else {
-    infoDiv.innerHTML = "経路が見つかりませんでした。";
+  const path = bfs(adj, start, goal);
+  if (!path) {
+    result.textContent = "経路が見つかりません";
+    return;
   }
-}
 
-// 実行
-loadData().then(({stations, lines, joins}) => {
-  const {station_g_to_info, adj} = processData(stations, lines, joins);
-  const possibleTargets = Object.keys(adj).filter(g => g!==start_station_g_cd);
-  const goal = possibleTargets[Math.floor(Math.random()*possibleTargets.length)];
-  const path = bfsShortestPath(adj, start_station_g_cd, goal);
-  console.log("最短経路：", path ? path.map(g=>station_g_to_info[g].name) : "なし");
-  drawMap(station_g_to_info, adj, path);
-});
+  const names = path.map(g => gToName[g]);
+  result.textContent =
+    `ゴール駅: ${goalName}\n\n経路:\n` +
+    names.join(" → ");
+}
 </script>
+
 </body>
 </html>
