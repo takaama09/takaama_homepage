@@ -1,124 +1,63 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<title>JR西日本 最短経路（Python忠実・安定版）</title>
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-<style>
-body { font-family: sans-serif; }
-pre { background:#f5f5f5; padding:10px; }
-</style>
+  <meta charset="UTF-8">
+  <title>駅読み込みテスト</title>
 </head>
 <body>
+  <h2 id="result">読み込み中…</h2>
 
-<h2>Python忠実移植（CSV安全版）</h2>
-<button id="run">実行</button>
-<pre id="output">未実行</pre>
+  <script>
+    const stationURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/station/station.csv';
 
-<script>
-const stationURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/station/station.csv';
-const lineURL    = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/station/line.csv';
-const joinURL    = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/station/join.csv';
+    // CSVをパースする関数
+    function parseCSV(text) {
+      const lines = text.trim().split('\n');
+      const header = lines[0].split(',');
+      return lines.slice(1).map(line => {
+        const cols = line.split(',');
+        const obj = {};
+        header.forEach((h, i) => {
+          obj[h] = cols[i];
+        });
+        return obj;
+      });
+    }
 
-function loadCSV(url) {
-  return new Promise(resolve => {
-    Papa.parse(url, {
-      download: true,
-      header: true,
-      skipEmptyLines: true,
-      complete: res => resolve(res.data)
-    });
-  });
-}
+    async function main() {
+      // CSV読み込み
+      const res = await fetch(stationURL);
+      const text = await res.text();
+      const stations = parseCSV(text);
 
-function bfsShortestPath(adj, start, goal) {
-  const visited = new Set();
-  const queue = [[start]];
+      console.log('stations sample:', stations.slice(0, 5));
 
-  while (queue.length) {
-    const path = queue.shift();
-    const node = path[path.length - 1];
-
-    if (node === goal) return path;
-
-    if (!visited.has(node)) {
-      visited.add(node);
-      for (const n of (adj[node] || [])) {
-        queue.push([...path, n]);
+      // station_g_cd → 駅名（代表）
+      const stationGToName = {};
+      for (const s of stations) {
+        if (!stationGToName[s.station_g_cd]) {
+          stationGToName[s.station_g_cd] = s.station_name;
+        }
       }
+
+      // 最寄駅（固定：甲南山手）
+      const startG = "1160308";
+
+      // ランダム駅
+      const allG = Object.keys(stationGToName);
+      const goalG = allG[Math.floor(Math.random() * allG.length)];
+
+      const startName = stationGToName[startG];
+      const goalName = stationGToName[goalG];
+
+      document.getElementById('result').innerText =
+        `最寄駅：${startName}駅\n→ ゴール駅：${goalName}駅`;
+
+      console.log('startG:', startG, startName);
+      console.log('goalG:', goalG, goalName);
     }
-  }
-  return null;
-}
 
-document.getElementById("run").onclick = async () => {
-  const output = document.getElementById("output");
-  output.textContent = "計算中…";
-
-  const station = await loadCSV(stationURL);
-  const line    = await loadCSV(lineURL);
-  const join    = await loadCSV(joinURL);
-
-  const jr_company_cd = "4";
-
-  const jrLines = new Set(
-    line.filter(l => l.company_cd === jr_company_cd)
-        .map(l => l.line_cd)
-  );
-
-  const jrJoins = join.filter(j => jrLines.has(j.line_cd));
-
-  const stationCdToG = {};
-  const stationGToName = {};
-
-  station.forEach(s => {
-    stationCdToG[s.station_cd] = s.station_g_cd;
-    if (!(s.station_g_cd in stationGToName)) {
-      stationGToName[s.station_g_cd] = s.station_name;
-    }
-  });
-
-  const adj = {};
-
-  jrJoins.forEach(r => {
-    const c1 = r.station_cd1;
-    const c2 = r.station_cd2;
-    if (!(c1 in stationCdToG) || !(c2 in stationCdToG)) return;
-
-    const g1 = stationCdToG[c1];
-    const g2 = stationCdToG[c2];
-    if (g1 === g2) return;
-
-    adj[g1] ??= new Set();
-    adj[g2] ??= new Set();
-    adj[g1].add(g2);
-    adj[g2].add(g1);
-  });
-
-  Object.keys(adj).forEach(k => adj[k] = [...adj[k]]);
-
-  const start = "1160308";
-
-  const all = Object.keys(adj);
-  const targets = all.filter(x => x !== start);
-  const goal = targets[Math.floor(Math.random() * targets.length)];
-
-  const path = bfsShortestPath(adj, start, goal);
-
-  let text = "";
-  if (path) {
-    text += "最短経路：\n";
-    path.forEach(g => text += stationGToName[g] + "\n");
-  } else {
-    text += "経路が見つかりませんでした。\n";
-  }
-
-  text += `\nスタート: ${stationGToName[start]} (${start})`;
-  text += `\nゴール: ${stationGToName[goal]} (${goal})`;
-
-  output.textContent = text;
-};
-</script>
-
+    main();
+  </script>
 </body>
 </html>
