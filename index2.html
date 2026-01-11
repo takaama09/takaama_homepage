@@ -2,97 +2,215 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>たかあましゆんのページ</title>
+  <title>たかあましゆんのホームページ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- ビューポート設定: 画面幅に応じて拡大縮小 -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <!-- セキュリティ対策 -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
 
   <style>
-    /* ------------------------
-       基本スタイル
-    ------------------------ */
+    :root {
+      --main: #2563eb;
+      --bg: #f4f6f8;
+      --card: #ffffff;
+      --border: #e5e7eb;
+      --text: #222;
+      --sub: #666;
+      --disabled: #e0e0e0;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: sans-serif; /* 読みやすいフォント */
-      padding: 20px;           /* 周囲に余白 */
-      margin: 0;               /* 余計な外枠を消す */
-      background: #f9f9f9;     /* 背景色 */
-      max-width: 100%;         /* はみ出し防止 */
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
     }
 
-    /* コンテンツを中央に寄せるためのラッパー */
     .container {
-      max-width: 800px;        /* PCでは最大幅800px */
-      margin: 0 auto;          /* 左右中央寄せ */
-      background: #fff;        /* コンテナ背景を白に */
+      max-width: 900px;
+      margin: 0 auto;
       padding: 20px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* 軽い影 */
-      border-radius: 10px;     /* 角丸 */
     }
 
-    h1 {
-      color: #333;
-      font-size: 28px;
-      margin-bottom: 15px;
+    .hero {
+      text-align: center;
+      padding: 50px 20px 40px;
     }
 
-    p {
+    .hero h1 {
+      font-size: 40px;
+      margin: 0 0 10px;
+    }
+
+    .hero p {
+      color: var(--sub);
       font-size: 16px;
-      line-height: 1.5;
+    }
+
+    section {
+      margin-top: 50px;
+    }
+
+    section h2 {
+      font-size: 22px;
       margin-bottom: 20px;
+      border-left: 5px solid var(--main);
+      padding-left: 12px;
     }
 
-    a {
-      display: inline-block;  /* リンクをブロック状にしてクリックしやすく */
-      padding: 10px 15px;
-      margin: 5px 0;
-      background-color: #ffcc00;
-      color: #000;
+    .links {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      display: block;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
       text-decoration: none;
-      border-radius: 5px;
-      transition: background 0.3s;
+      color: var(--text);
+      transition: transform 0.2s, box-shadow 0.2s;
     }
 
-    a:hover {
-      background-color: #ffaa00;
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
     }
 
-    /* ------------------------
-       スマホ向け調整（幅600px以下）
-    ------------------------ */
+    .card span {
+      display: block;
+      font-size: 14px;
+      color: var(--sub);
+      margin-top: 6px;
+    }
+
+    .card.disabled {
+      background: var(--disabled);
+      color: #888;
+      border-color: #ccc;
+      pointer-events: none;
+      position: relative;
+    }
+
+    .card.disabled::after {
+      content: "🔒 準備中";
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      font-size: 12px;
+      color: #666;
+    }
+
+    footer {
+      text-align: center;
+      margin: 60px 0 20px;
+      font-size: 13px;
+      color: var(--sub);
+    }
+
     @media (max-width: 600px) {
-      h1 { font-size: 22px; }      /* 見出しを小さく */
-      p { font-size: 14px; }       /* 本文も小さく */
-      a { padding: 12px; font-size: 16px; } /* タップしやすく */
+      .hero h1 {
+        font-size: 30px;
+      }
     }
-
   </style>
 </head>
 <body>
 
-  <!-- コンテンツを中央にまとめるラッパー -->
   <div class="container">
-    <h1>たかあましゆんのホームページ</h1>
 
-    <!-- プロフィールなどの説明 -->
-    <p>たかあましゆんです！Youtubeで旅動画を中心にアップしています！<br>
-    ※ゲームをプレイするにはパスワードが必要です。</p>
+    <div class="hero">
+      <h1>たかあましゆん</h1>
+      <p>YouTubeで鉄道旅を中心とした動画を投稿しています！</p>
+    </div>
 
-    <!-- リンクの例 -->
-    <a href="https://x.com/stakaama" target="_blank">X（旧Twitter）</a>
-    <a href="https://www.youtube.com/@takaama" target="_blank">YouTubeチャンネル</a>
-    <a href="https://tabelog.com/rvwr/018131802/" target="_blank">食べログ</a>
-    <a href="https://sites.google.com/view/takaamaeducationpage?usp=sharing" target="_blank">教育サイト</a>
-    <a href="child_game.html">子供の頃よくやったゲーム（準備中）</a>
-    <a href="kill_game.html">劇ヤバゲーム</a>
-    <a href="trip_company.html">ダーツで行き先を決めよう！</a>
-    <a href="JRrosenzu.html">JR路線図</a>
-    <a href="saikyo_trip.html">最強の鉄道旅行計画を作ろう！</a>
-    <a href="westjr_trip.html">JR西日本の旅行</a>
-    <!-- <a href="trip_2stations.html">最短経路特定（準備中）</a> -->
-    <a href="gpt_code_box.html">（準備中）</a>
+    <section>
+      <h2>自己紹介</h2>
+      <div class="links">
+        <a class="card" href="profile.html">
+          プロフィール
+          <span>※パスワードが必要です。パスワードは生年月日8桁を後ろから入力してください。</span>
+        </a>
+      </div>
+    </section>
+
+    <section>
+      <h2>各種アカウント</h2>
+      <div class="links">
+        <a class="card"
+           href="https://x.com/stakaama"
+           target="_blank"
+           rel="noopener noreferrer">
+          X（旧Twitter）
+          <span>日常・告知など</span>
+        </a>
+
+        <a class="card"
+           href="https://www.youtube.com/@takaama"
+           target="_blank"
+           rel="noopener noreferrer">
+          YouTube
+          <span>鉄道旅動画</span>
+        </a>
+
+        <a class="card"
+           href="https://tabelog.com/rvwr/018131802/"
+           target="_blank"
+           rel="noopener noreferrer">
+          食べログ
+          <span>グルメ記録</span>
+        </a>
+      </div>
+    </section>
+
+    <section>
+      <h2>鉄道・旅行ツール</h2>
+      <div class="links">
+        <a class="card" href="trip_company.html">
+          ダーツで行き先を決めよう！
+          <span>全国の駅がランダムに出ます</span>
+        </a>
+
+        <a class="card" href="JRrosenzu.html">
+          JR路線図
+          <span>地図上にJRの駅と路線を表示します</span>
+        </a>
+
+        <a class="card" href="saikyo_trip.html">
+          旅行計画
+          <span>最寄駅からランダムな駅（全鉄道）までのルートを表示します</span>
+        </a>
+
+        <a class="card" href="random_custome_tripplan">
+          最強の鉄道旅行計画
+          <span>こちらは乗車する鉄道（複数可）を選べます。各種フリーきっぷにも対応。</span>
+        </a>
+
+        <a class="card" href="westjr_trip.html">
+          JR西日本の旅行
+          <span>エリア特化型で旅行をサポート</span>
+        </a>
+
+        <div class="card disabled">
+          GPTツール
+          <span>実験中</span>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      © たかあましゆん
+    </footer>
+
   </div>
 
 </body>
 </html>
-
-
