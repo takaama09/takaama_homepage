@@ -156,6 +156,57 @@ function bfsShortestPath(adj, start, goal) {
     alert('エラーが発生しました');
   }
 })();
+
+// ===== 地図描画 =====
+const latlngs = [];
+
+path.forEach((g, i) => {
+  const info = stationGInfo[g];
+  if (!info) return;
+
+  const ll = [info.lat, info.lon];
+  latlngs.push(ll);
+
+  // Start
+  if (i === 0) {
+    L.circleMarker(ll, {
+      radius: 10,
+      color: 'red',
+      fillColor: 'red',
+      fillOpacity: 1
+    }).addTo(map).bindPopup('Start: ' + info.name);
+
+  // Goal
+  } else if (i === path.length - 1) {
+    L.circleMarker(ll, {
+      radius: 10,
+      color: 'blue',
+      fillColor: 'blue',
+      fillOpacity: 1
+    }).addTo(map).bindPopup('Goal: ' + info.name);
+
+  // 通過駅
+  } else {
+    L.circleMarker(ll, {
+      radius: 5,
+      color: '#333',
+      fillColor: '#666',
+      fillOpacity: 0.8
+    }).addTo(map).bindPopup(info.name);
+  }
+});
+
+// 経路ライン
+const polyline = L.polyline(latlngs, {
+  color: 'orange',
+  weight: 5,
+  opacity: 0.8
+}).addTo(map);
+
+// 画面を経路にフィット
+map.fitBounds(polyline.getBounds());
+
+  
 </script>
 
 </body>
