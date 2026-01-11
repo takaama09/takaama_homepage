@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>準備中</title>
+<title>準備中...</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <style>
@@ -103,7 +103,7 @@ const companyURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage
 
 
 //あとで色々変える
-const allowedCompanies = ['4']; // JR西日本だけ
+//const allowedCompanies = ['4']; // JR西日本だけ
 //const path = bfsShortestPath(adj, startG, goalG, allowedCompanies);
 
 // BFS
@@ -254,7 +254,7 @@ joinText.replace(/\r/g,'').split('\n').slice(1).forEach(r => {
   allG = Object.keys(adj);
 
 //ここからチェックボックス
-// 会社チェックボックス生成
+// 会社チェックボックス生成（階層対応）
 function generateCompanyCheckboxes() {
   const container = document.getElementById('companyCheckboxes');
   container.innerHTML = '';
@@ -271,14 +271,34 @@ function generateCompanyCheckboxes() {
   companyTypeOrder.forEach(type => {
     if (!companiesByType[type]) return;
 
-    // 事業者区分の見出し
     const typeDiv = document.createElement('div');
     typeDiv.style.marginBottom = '8px';
-    const typeTitle = document.createElement('strong');
-    typeTitle.textContent = companyTypeLabel[type] || type;
-    typeDiv.appendChild(typeTitle);
 
-    // 会社ごとのチェックボックス
+    // 上位階層チェックボックス
+    const typeLabel = document.createElement('label');
+    typeLabel.style.display = 'block';
+    typeLabel.style.cursor = 'pointer';
+    typeLabel.style.fontWeight = 'bold';
+
+    const typeCheckbox = document.createElement('input');
+    typeCheckbox.type = 'checkbox';
+    typeCheckbox.checked = companiesByType[type].every(c => allowedCompanies.includes(c.cd));
+    
+    // 上位チェック変更時の動作
+    typeCheckbox.addEventListener('change', () => {
+      const checked = typeCheckbox.checked;
+      // 下位すべてチェック or 外す
+      typeDiv.querySelectorAll('input[type=checkbox].company-checkbox').forEach(cb => {
+        cb.checked = checked;
+      });
+      updateAllowedCompanies();
+    });
+
+    typeLabel.appendChild(typeCheckbox);
+    typeLabel.appendChild(document.createTextNode(' ' + (companyTypeLabel[type] || type)));
+    typeDiv.appendChild(typeLabel);
+
+    // 下位会社チェックボックス
     companiesByType[type].forEach(c => {
       const label = document.createElement('label');
       label.style.display = 'block';
@@ -287,9 +307,17 @@ function generateCompanyCheckboxes() {
 
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
-      checkbox.value = c.cd;  // company_cd
-      checkbox.checked = allowedCompanies.includes(c.cd); // 初期値
-      checkbox.addEventListener('change', updateAllowedCompanies);
+      checkbox.value = c.cd;
+      checkbox.classList.add('company-checkbox'); // 下位用クラス
+      checkbox.checked = allowedCompanies.includes(c.cd);
+
+      // 下位変更時に上位も自動チェック/解除
+      checkbox.addEventListener('change', () => {
+        const allChecked = Array.from(typeDiv.querySelectorAll('input.company-checkbox'))
+          .every(cb => cb.checked);
+        typeCheckbox.checked = allChecked;
+        updateAllowedCompanies();
+      });
 
       label.appendChild(checkbox);
       label.appendChild(document.createTextNode(' ' + c.name));
@@ -299,6 +327,7 @@ function generateCompanyCheckboxes() {
     container.appendChild(typeDiv);
   });
 }
+
 
 // チェックボックス変更時に allowedCompanies 更新
 function updateAllowedCompanies() {
