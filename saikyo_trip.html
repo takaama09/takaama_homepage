@@ -244,12 +244,22 @@ const companyTypeLabel = {
 };
 
 // company_type を入れる
-Object.keys(companiesByType).forEach(type => {
+// Object.keys(companiesByType).forEach(type => {
+//   const opt = document.createElement('option');
+//   opt.value = type;
+//   opt.textContent = companyTypeLabel[type] || type;
+//   companyTypeSelect.appendChild(opt);
+// });
+const companyTypeOrder = ['1', '2', '3', '0'];
+
+companyTypeOrder.forEach(type => {
+  if (!companiesByType[type]) return;
   const opt = document.createElement('option');
   opt.value = type;
   opt.textContent = companyTypeLabel[type] || type;
   companyTypeSelect.appendChild(opt);
 });
+
 
 companyTypeSelect.addEventListener('change', () => {
   companySelect.innerHTML = '<option value="">選択してください</option>';
