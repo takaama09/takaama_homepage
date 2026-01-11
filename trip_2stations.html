@@ -2,11 +2,22 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>JR西日本 旅行計画</title>
+<title>準備中</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <style>
   body { font-family: sans-serif; }
+  #filterRow {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap; /* 画面狭い時は折り返す */
+    margin-bottom: 10px;
+  }
+  #filterRow select {
+    font-size: 14px;
+    padding: 4px 6px;
+  }
   #map { height: 70vh; width: 100%; }
   #result { padding: 10px; font-size: 16px; white-space: pre-line; }
   #searchBtn {
@@ -19,13 +30,50 @@
 </head>
 <body>
 
-<h2>JR西日本限定でランダム駅への最短経路を表示します！（最寄駅対応編）</h2>
+<h2>最強の鉄道旅行計画を立てよう！</h2>
 
-<label>
-  最寄駅を選んでください：
-  <select id="startSelect"></select>
-</label>
-  
+<div id="companyCheckboxes">
+  <!-- ここに事業者区分ごとの会社チェックボックスが入る -->
+</div>
+
+<div id="filterRow">
+  <div style="margin-bottom:10px;">
+    <label>
+      事業者区分：
+      <select id="companyTypeSelect">
+        <option value="">選択してください</option>
+      </select>
+    </label>
+  </div>
+
+  <div style="margin-bottom:10px;">
+    <label>
+      会社：
+      <select id="companySelect">
+        <option value="">選択してください</option>
+      </select>
+    </label>
+  </div>
+
+  <div style="margin-bottom:10px;">
+    <label>
+      路線：
+      <select id="lineSelect">
+        <option value="">選択してください</option>
+      </select>
+    </label>
+  </div>
+
+  <div style="margin-bottom:10px;">
+    <label>
+      最寄駅：
+      <select id="startSelect">
+        <option value="">選択してください</option>
+      </select>
+    </label>
+  </div>
+</div>
+
 <button id="searchBtn">検索する！</button>
 <div id="result">ボタンを押してください</div>
 <div id="map"></div>
@@ -42,14 +90,21 @@ let adj = {};
 let stationGInfo = {};
 let allG = [];
 let mapLayers = [];
+let companiesByType = {};
+let linesByCompany = {};
+let stationsByLine = {};
 
 // CSV URL
 const lineURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station/line.csv';
 const stationURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station/station.csv';
 const joinURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station/join.csv';
+const companyURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station/company.csv';
+
+// JR西日本だけ
+const allowedCompanies = ['4'];
 
 // BFS
-function bfsShortestPath(adj, start, goal) {
+function bfsShortestPath(adj, start, goal, allowedCompanies) {
   const visited = new Set();
   const queue = [[start]];
 
@@ -60,142 +115,250 @@ function bfsShortestPath(adj, start, goal) {
 
     if (!visited.has(node)) {
       visited.add(node);
-      for (const nb of adj[node] || []) {
-        queue.push([...path, nb]);
+      for (const edge of adj[node] || []) {
+        if (!allowedCompanies.includes(edge.company)) continue; // 会社制限
+        queue.push([...path, edge.to]);
       }
     }
   }
   return null;
 }
 
-// ===== 初期化（CSV読み込みは一度だけ）=====
+// ===== 初期化（CSV読み込み） =====
 (async () => {
-  const [lineText, stationText, joinText] = await Promise.all([
+  const [companyText, lineText, stationText, joinText] = await Promise.all([
+    fetch(companyURL).then(r => r.text()),
     fetch(lineURL).then(r => r.text()),
     fetch(stationURL).then(r => r.text()),
     fetch(joinURL).then(r => r.text())
   ]);
 
-  const jrLines = new Set();
+  companyText.replace(/\r/g,'').split('\n').slice(1).forEach(r => {
+    const c = r.split(',');
+    if (c.length < 10) return;
+    const company_cd = c[0];
+    const company_name = c[2];
+    const company_type = c[7];
+    if (!companiesByType[company_type]) companiesByType[company_type] = [];
+    companiesByType[company_type].push({ cd: company_cd, name: company_name });
+  });
+
   lineText.replace(/\r/g,'').split('\n').slice(1).forEach(r => {
     const c = r.split(',');
-    if (c[1] === '4') jrLines.add(c[0]);
+    if (c.length < 10) return;
+    const line_cd = c[0];
+    const company_cd = c[1];
+    const line_name = c[2];
+    if (!linesByCompany[company_cd]) linesByCompany[company_cd] = [];
+    linesByCompany[company_cd].push({ cd: line_cd, name: line_name });
   });
 
   const stationCdToG = {};
-
   stationText.replace(/\r/g,'').split('\n').slice(1).forEach(r => {
     const c = r.split(',');
     if (c.length < 11) return;
-
     const station_cd = c[0];
     const g = c[1];
     const name = c[2];
     const line_cd = c[5];
     const lon = parseFloat(c[9]);
     const lat = parseFloat(c[10]);
-
-    if (!jrLines.has(line_cd)) return;
     if (isNaN(lat) || isNaN(lon)) return;
 
+    if (!stationsByLine[line_cd]) stationsByLine[line_cd] = [];
+    stationsByLine[line_cd].push({ g, name, lat, lon });
     stationCdToG[station_cd] = g;
+
     if (!stationGInfo[g]) {
       stationGInfo[g] = { name, lat, lon };
     }
   });
 
+  // line_cd → company_cd マップ
+  const lineToCompany = {};
+  lineText.replace(/\r/g,'').split('\n').slice(1).forEach(r => {
+    const c = r.split(',');
+    if (c.length < 2) return;
+    lineToCompany[c[0]] = c[1];
+  });
+
+  // join 読み込み
   joinText.replace(/\r/g,'').split('\n').slice(1).forEach(r => {
     const c = r.split(',');
     if (c.length < 3) return;
-
-    const line_cd = c[0];
-    const s1 = c[1];
-    const s2 = c[2];
-
-    if (!jrLines.has(line_cd)) return;
+    const [line_cd, s1, s2] = c;
     if (!(s1 in stationCdToG) || !(s2 in stationCdToG)) return;
 
     const g1 = stationCdToG[s1];
     const g2 = stationCdToG[s2];
     if (g1 === g2) return;
 
-    adj[g1] = adj[g1] || new Set();
-    adj[g2] = adj[g2] || new Set();
-    adj[g1].add(g2);
-    adj[g2].add(g1);
+    const company_cd = lineToCompany[line_cd];
+    if (!company_cd) return;
+
+    adj[g1] = adj[g1] || [];
+    adj[g2] = adj[g2] || [];
+    adj[g1].push({ to: g2, company: company_cd });
+    adj[g2].push({ to: g1, company: company_cd });
   });
 
   allG = Object.keys(adj);
+
+  // ===== チェックボックス生成 =====
+  function generateCompanyCheckboxes() {
+    const container = document.getElementById('companyCheckboxes');
+    container.innerHTML = '';
+
+    const companyTypeLabel = { '1':'JR', '2':'大手私鉄', '3':'準大手私鉄', '0':'その他' };
+    const companyTypeOrder = ['1','2','3','0'];
+
+    companyTypeOrder.forEach(type => {
+      if (!companiesByType[type]) return;
+      const typeDiv = document.createElement('div');
+      typeDiv.style.marginBottom = '8px';
+
+      const typeTitle = document.createElement('strong');
+      typeTitle.textContent = companyTypeLabel[type] || type;
+      typeDiv.appendChild(typeTitle);
+
+      companiesByType[type].forEach(c => {
+        const label = document.createElement('label');
+        label.style.display = 'block';
+        label.style.marginLeft = '16px';
+        label.style.cursor = 'pointer';
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = c.cd;
+        checkbox.checked = allowedCompanies.includes(c.cd);
+        checkbox.addEventListener('change', updateAllowedCompanies);
+
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(' ' + c.name));
+        typeDiv.appendChild(label);
+      });
+
+      container.appendChild(typeDiv);
+    });
+  }
+
+  function updateAllowedCompanies() {
+    const checkboxes = document.querySelectorAll('#companyCheckboxes input[type=checkbox]');
+    allowedCompanies.length = 0;
+    checkboxes.forEach(cb => { if(cb.checked) allowedCompanies.push(cb.value); });
+  }
+
+  generateCompanyCheckboxes();
+
+  // ===== プルダウン連動 =====
+  const companyTypeSelect = document.getElementById('companyTypeSelect');
+  const companySelect = document.getElementById('companySelect');
+  const lineSelect = document.getElementById('lineSelect');
+  const startSelect = document.getElementById('startSelect');
+
+  const companyTypeLabel = { '1':'JR', '2':'大手私鉄', '3':'準大手私鉄', '0':'その他' };
+  const companyTypeOrder = ['1','2','3','0'];
+  companyTypeOrder.forEach(type => {
+    if (!companiesByType[type]) return;
+    const opt = document.createElement('option');
+    opt.value = type;
+    opt.textContent = companyTypeLabel[type] || type;
+    companyTypeSelect.appendChild(opt);
+  });
+
+  companyTypeSelect.addEventListener('change', () => {
+    companySelect.innerHTML = '<option value="">選択してください</option>';
+    lineSelect.innerHTML = '<option value="">選択してください</option>';
+    const type = companyTypeSelect.value;
+    if (!type || !companiesByType[type]) return;
+    companiesByType[type].forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.cd;
+      opt.textContent = c.name;
+      companySelect.appendChild(opt);
+    });
+  });
+
+  companySelect.addEventListener('change', () => {
+    lineSelect.innerHTML = '<option value="">選択してください</option>';
+    const companyCd = companySelect.value;
+    if (!companyCd || !linesByCompany[companyCd]) return;
+    linesByCompany[companyCd].forEach(l => {
+      const opt = document.createElement('option');
+      opt.value = l.cd;
+      opt.textContent = l.name;
+      lineSelect.appendChild(opt);
+    });
+  });
+
+  lineSelect.addEventListener('change', () => {
+    startSelect.innerHTML = '<option value="">選択してください</option>';
+    const lineCd = lineSelect.value;
+    if (!lineCd || !stationsByLine[lineCd]) return;
+    stationsByLine[lineCd].sort((a,b)=>a.name.localeCompare(b.name,'ja')).forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.g;
+      opt.textContent = s.name;
+      startSelect.appendChild(opt);
+    });
+  });
+
   document.getElementById('result').textContent = '準備完了！ボタンを押してください';
 })();
 
 // ===== ボタン押下時 =====
 document.getElementById('searchBtn').addEventListener('click', async () => {
   const resultDiv = document.getElementById('result');
-  const startG = document.getElementById('startSelect').value;
+  const startG = startSelect.value;
 
+  if(!startG || !stationGInfo[startG]) {
+    resultDiv.textContent = '最寄駅を選択してください';
+    return;
+  }
 
-  // 地図リセット
-  mapLayers.forEach(l => map.removeLayer(l));
+  mapLayers.forEach(l=>map.removeLayer(l));
   mapLayers = [];
 
-  const goalG = allG[Math.floor(Math.random() * allG.length)];
-  resultDiv.textContent =
-    `最寄駅：${stationGInfo[startG].name}駅\n` +
-    `→ ゴール駅：${stationGInfo[goalG].name}駅\n\n計算中...`;
+  const candidateGoals = allG.filter(g => {
+    const edges = adj[g] || [];
+    return edges.some(edge => allowedCompanies.includes(edge.company));
+  });
 
-  await new Promise(r => setTimeout(r, 50));
+  const goalG = candidateGoals[Math.floor(Math.random()*candidateGoals.length)];
 
-  const path = bfsShortestPath(adj, startG, goalG);
-  if (!path) {
+  resultDiv.textContent = `最寄駅：${stationGInfo[startG].name}駅\n→ ゴール駅：${stationGInfo[goalG].name}駅\n\n計算中...`;
+
+  await new Promise(r=>setTimeout(r,50));
+
+  const path = bfsShortestPath(adj,startG,goalG,allowedCompanies);
+  if(!path) {
     resultDiv.textContent += '\n経路が見つかりませんでした';
     return;
   }
 
   const latlngs = [];
-  path.forEach((g, i) => {
+  path.forEach((g,i)=>{
     const info = stationGInfo[g];
     const ll = [info.lat, info.lon];
     latlngs.push(ll);
 
-    const marker = L.circleMarker(ll, {
-      radius: i === 0 || i === path.length - 1 ? 10 : 5,
-      color: i === 0 ? 'red' : i === path.length - 1 ? 'red' : '#333',
+    const marker = L.circleMarker(ll,{
+      radius: i===0||i===path.length-1?10:5,
+      color: i===0?'red':i===path.length-1?'red':'#333',
       fillOpacity: 1
     }).addTo(map).bindPopup(info.name);
 
     mapLayers.push(marker);
   });
 
-  const line = L.polyline(latlngs, {
-    color: 'orange',
-    weight: 5
-  }).addTo(map);
-
+  const line = L.polyline(latlngs,{ color:'orange', weight:5 }).addTo(map);
   mapLayers.push(line);
   map.fitBounds(line.getBounds());
 
-  resultDiv.textContent =
-    `最寄駅：${stationGInfo[startG].name}駅\n` +
-    `→ ゴール駅：${stationGInfo[goalG].name}駅\n\n` +
-    path.map(g => '・' + stationGInfo[g].name + '駅').join('\n');
+  resultDiv.textContent = 
+    `最寄駅：${stationGInfo[startG].name}駅\n→ ゴール駅：${stationGInfo[goalG].name}駅\n\n` +
+    path.map(g=>'・'+stationGInfo[g].name+'駅').join('\n');
 });
-
-//プルダウン選択
-const startSelect = document.getElementById('startSelect');
-
-Object.entries(stationGInfo).forEach(([g, info]) => {
-  const option = document.createElement('option');
-  option.value = g;               // station_g_cd
-  option.textContent = info.name; // 駅名
-  startSelect.appendChild(option);
-});
-
-// // デフォルトを甲南山手に
-// startSelect.value = '1160308';
-
-
-  
 </script>
 </body>
 </html>
