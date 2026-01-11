@@ -288,11 +288,51 @@ function bfsShortestPath(adj, start, goal, allowedCompanies) {
 }
 
 
-  function updateAllowedCompanies() {
-    const checkboxes = document.querySelectorAll('#companyCheckboxes input[type=checkbox]');
-    allowedCompanies.length = 0;
-    checkboxes.forEach(cb => { if(cb.checked) allowedCompanies.push(cb.value); });
-  }
+// チェックボックス変更時に allowedCompanies 更新＆プルダウン更新
+function updateAllowedCompanies() {
+  const checkboxes = document.querySelectorAll('#companyCheckboxes input[type=checkbox]');
+  allowedCompanies.length = 0; // クリア
+
+  checkboxes.forEach(cb => {
+    if (cb.checked) allowedCompanies.push(cb.value);
+  });
+
+  // プルダウン更新
+  refreshCompanyDropdown();
+}
+
+// allowedCompanies に合わせて会社プルダウン更新
+function refreshCompanyDropdown() {
+  companySelect.innerHTML = '<option value="">選択してください</option>';
+  
+  // 上位チェックされている事業者区分の子会社だけ取得
+  Object.keys(companiesByType).forEach(type => {
+    const typeDiv = document.querySelector('#companyCheckboxes > div:nth-child(' + (parseInt(type)+1) + ')');
+    if (!typeDiv) return;
+
+    const typeCheckbox = typeDiv.querySelector('input[type=checkbox]');
+    if (!typeCheckbox.checked) return; // 上位未チェックならスキップ
+
+    // 子会社チェックされているものだけ
+    const childCheckboxes = typeDiv.querySelectorAll('input[data-company-type="'+type+'"]');
+    childCheckboxes.forEach(cb => {
+      if (!cb.checked) return;
+      const company = companiesByType[type].find(c => c.cd === cb.value);
+      if (!company) return;
+      const opt = document.createElement('option');
+      opt.value = company.cd;
+      opt.textContent = company.name;
+      companySelect.appendChild(opt);
+    });
+  });
+
+  // 会社プルダウン選択時に路線プルダウンも更新
+  lineSelect.innerHTML = '<option value="">選択してください</option>';
+  startSelect.innerHTML = '<option value="">選択してください</option>';
+}
+
+
+
 
   generateCompanyCheckboxes();
 
@@ -312,18 +352,24 @@ function bfsShortestPath(adj, start, goal, allowedCompanies) {
     companyTypeSelect.appendChild(opt);
   });
 
-  companyTypeSelect.addEventListener('change', () => {
-    companySelect.innerHTML = '<option value="">選択してください</option>';
-    lineSelect.innerHTML = '<option value="">選択してください</option>';
-    const type = companyTypeSelect.value;
-    if (!type || !companiesByType[type]) return;
-    companiesByType[type].forEach(c => {
+companyTypeSelect.addEventListener('change', () => {
+  companySelect.innerHTML = '<option value="">選択してください</option>';
+  lineSelect.innerHTML = '<option value="">選択してください</option>';
+  startSelect.innerHTML = '<option value="">選択してください</option>';
+
+  const type = companyTypeSelect.value;
+  if (!type || !companiesByType[type]) return;
+
+  companiesByType[type]
+    .filter(c => allowedCompanies.includes(c.cd)) // ← チェックされている会社だけ
+    .forEach(c => {
       const opt = document.createElement('option');
       opt.value = c.cd;
       opt.textContent = c.name;
       companySelect.appendChild(opt);
     });
-  });
+});
+
 
   companySelect.addEventListener('change', () => {
     lineSelect.innerHTML = '<option value="">選択してください</option>';
