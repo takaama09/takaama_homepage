@@ -32,6 +32,11 @@
 
 <h2>最強の鉄道旅行計画を立てよう！</h2>
 
+<div style="margin-bottom:10px;">
+  <button id="btn18Kippu">18きっぷ</button>
+</div>
+
+
 <div id="companyCheckboxes">
   <!-- ここに事業者区分ごとの会社チェックボックスが入る -->
 </div>
@@ -326,6 +331,24 @@ function refreshCompanyDropdown() {
 }
 
   generateCompanyCheckboxes();
+
+  //特殊ボタン設定
+  document.getElementById('btn18Kippu').addEventListener('click', () => {
+  // JR の type は '1'
+  const jrType = '1';
+
+  // 上位チェックボックスをONに
+  const topCheckbox = document.querySelector('input[type=checkbox][data-company-type="'+jrType+'"].top');
+  if (topCheckbox) topCheckbox.checked = true;
+
+  // 子会社チェックボックスもすべてON
+  const childCheckboxes = document.querySelectorAll('input[data-company-type="'+jrType+'"]');
+  childCheckboxes.forEach(cb => cb.checked = true);
+
+  // allowedCompanies 更新＆プルダウン同期
+  updateAllowedCompanies();
+});
+
 
   // ===== プルダウン連動 =====
   const companyTypeSelect = document.getElementById('companyTypeSelect');
