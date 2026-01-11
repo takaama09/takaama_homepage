@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>最強の鉄道旅行計画を立てよう！</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<style>
+  body { font-family: sans-serif; }
+  #filterRow {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;   /* 画面狭い時は折り返す */
+    margin-bottom: 10px;
+  }
+  #filterRow select {
+    font-size: 14px;
+    padding: 4px 6px;
+  }
+  #map { height: 70vh; width: 100%; }
+  #result { padding: 10px; font-size: 16px; white-space: pre-line; }
+  #searchBtn {
+    font-size: 18px;
+    padding: 10px 20px;
+    margin: 10px 0;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<h2>最強の鉄道旅行計画を立てよう！</h2>
+  
+<div id="filterRow">
+<div style="margin-bottom:10px;">
+  <label>
+    事業者区分：
+    <select id="companyTypeSelect">
+      <option value="">選択してください</option>
+    </select>
+  </label>
+</div>
+
+<div style="margin-bottom:10px;">
+  <label>
+    会社：
+    <select id="companySelect">
+      <option value="">選択してください</option>
+    </select>
+  </label>
+</div>
+
+<div style="margin-bottom:10px;">
+  <label>
+    路線：
+    <select id="lineSelect">
+      <option value="">選択してください</option>
+    </select>
+  </label>
+</div>
+
+<div style="margin-bottom:10px;">
+<label>
+  最寄駅：
+  <select id="startSelect">
+    <option value="">選択してください</option>
+  </select>
+</label>
+</div>
+</div>
+  
+<button id="searchBtn">検索する！</button>
+<div id="result">ボタンを押してください</div>
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+const map = L.map('map').setView([35.5, 135], 6);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
+
+// ===== グローバル変数 =====
+let adj = {};
+let stationGInfo = {};
+let allG = [];
+let mapLayers = [];
+let companiesByType = {}; 
+let linesByCompany = {};
+let stationsByLine = {};
+
+// CSV URL
+const lineURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station/line.csv';
+const stationURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station/station.csv';
+const joinURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station/join.csv';
+const companyURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station/company.csv';
+
+
+// BFS
+function bfsShortestPath(adj, start, goal) {
+  const visited = new Set();
+  const queue = [[start]];
+
+  while (queue.length) {
+    const path = queue.shift();
+    const node = path[path.length - 1];
+    if (node === goal) return path;
+
+    if (!visited.has(node)) {
+      visited.add(node);
+      for (const nb of adj[node] || []) {
+        queue.push([...path, nb]);
+      }
+    }
+  }
+  return null;
+}
+
+// ===== 初期化（CSV読み込みは一度だけ）=====
+(async () => {
+  const [companyText, lineText, stationText, joinText] = await Promise.all([
+    fetch(companyURL).then(r => r.text()),
+    fetch(lineURL).then(r => r.text()),
+    fetch(stationURL).then(r => r.text()),
+    fetch(joinURL).then(r => r.text())
+  ]);
+
+    companyText.replace(/\r/g,'').split('\n').slice(1).forEach(r => {
+    const c = r.split(',');
+    if (c.length < 10) return;
+
+    const company_cd = c[0];
+    const company_name = c[2];
+    const company_type = c[7];
+      
+    if (!companiesByType[company_type]) {
+      companiesByType[company_type] = [];
+    }
+    companiesByType[company_type].push({
+      cd: company_cd,
+      name: company_name
+    });
+  });
+
+
+  const jrLines = new Set();
+  lineText.replace(/\r/g,'').split('\n').slice(1).forEach(r => {
+    const c = r.split(',');
+    //if (c[1] === '4') jrLines.add(c[0]);　//この辺あとで修正？
+
+    if (c.length < 10) return;
+
+    const line_cd = c[0];
+    const company_cd = c[1];
+    const line_name = c[2];
+
+
+  if (!linesByCompany[company_cd]) {
+    linesByCompany[company_cd] = [];
+  }
+
+  linesByCompany[company_cd].push({
+    cd: line_cd,
+    name: line_name
+  });
+});
+
+
+  const stationCdToG = {};
+  stationText.replace(/\r/g,'').split('\n').slice(1).forEach(r => {
+    const c = r.split(',');
+    if (c.length < 11) return;
+
+    const station_cd = c[0];
+    const g = c[1];
+    const name = c[2];
+    const line_cd = c[5];
+    const lon = parseFloat(c[9]);
+    const lat = parseFloat(c[10]);
+
+    if (isNaN(lat) || isNaN(lon)) return;
+
+    if (!stationsByLine[line_cd]) {
+    stationsByLine[line_cd] = [];
+  }
+  
+  stationsByLine[line_cd].push({
+    g: g,
+    name: name,
+    lat: lat,
+    lon: lon
+  });
+
+
+    stationCdToG[station_cd] = g;
+    
+    // station_g_cd の代表駅（最初の1件だけ）
+    if (!stationGInfo[g]) {
+       stationGInfo[g] = {
+         name: name,
+         lat: lat,
+         lon: lon
+       };
+     }
+  });
+
+  joinText.replace(/\r/g,'').split('\n').slice(1).forEach(r => {
+    const c = r.split(',');
+    if (c.length < 3) return;
+
+    const line_cd = c[0];
+    const s1 = c[1];
+    const s2 = c[2];
+
+    if (!(s1 in stationCdToG) || !(s2 in stationCdToG)) return;
+
+    const g1 = stationCdToG[s1];
+    const g2 = stationCdToG[s2];
+    if (g1 === g2) return;
+
+    adj[g1] = adj[g1] || new Set();
+    adj[g2] = adj[g2] || new Set();
+    adj[g1].add(g2);
+    adj[g2].add(g1);
+  });
+
+  allG = Object.keys(adj);
+
+
+  //拡張プルダウン
+const companyTypeSelect = document.getElementById('companyTypeSelect');
+const companySelect = document.getElementById('companySelect');
+const lineSelect = document.getElementById('lineSelect');
+const startSelect = document.getElementById('startSelect');
+
+
+// 表示用ラベル
+const companyTypeLabel = {
+  '1': 'JR',
+  '2': '大手私鉄',
+  '3': '準大手私鉄',
+  '0': 'その他',
+};
+
+// company_type を入れる
+Object.keys(companiesByType).forEach(type => {
+  const opt = document.createElement('option');
+  opt.value = type;
+  opt.textContent = companyTypeLabel[type] || type;
+  companyTypeSelect.appendChild(opt);
+});
+
+companyTypeSelect.addEventListener('change', () => {
+  companySelect.innerHTML = '<option value="">選択してください</option>';
+  lineSelect.innerHTML = '<option value="">選択してください</option>';
+
+  const type = companyTypeSelect.value;
+  if (!type || !companiesByType[type]) return;
+
+  companiesByType[type].forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.cd;
+    opt.textContent = c.name;
+    companySelect.appendChild(opt);
+  });
+});
+
+// // 会社タイプ投入
+// COMPANY_TYPES.forEach(t => {
+//   const opt = document.createElement('option');
+//   opt.value = t.value;
+//   opt.textContent = t.label;
+//   companyTypeSelect.appendChild(opt);
+// });
+
+// 会社タイプ変更
+// companyTypeSelect.addEventListener('change', () => {
+//   companySelect.innerHTML = '<option value="">選択してください</option>';
+//   lineSelect.innerHTML = '<option value="">選択してください</option>';
+
+//   // const companies = COMPANIES[companyTypeSelect.value] || [];
+//   // companies.forEach(c => {
+//   //   const opt = document.createElement('option');
+//   //   opt.value = c.value;
+//   //   opt.textContent = c.label;
+//   //   companySelect.appendChild(opt);
+//   // });
+// });
+
+// 会社変更
+companySelect.addEventListener('change', () => {
+  lineSelect.innerHTML = '<option value="">選択してください</option>';
+
+  const companyCd = companySelect.value;
+  if (!companyCd || !linesByCompany[companyCd]) return;
+
+  linesByCompany[companyCd].forEach(l => {
+    const opt = document.createElement('option');
+    opt.value = l.cd;
+    opt.textContent = l.name;
+    lineSelect.appendChild(opt);
+  });
+});
+
+lineSelect.addEventListener('change', () => {
+  startSelect.innerHTML = '<option value="">選択してください</option>';
+
+  const lineCd = lineSelect.value;
+  if (!lineCd || !stationsByLine[lineCd]) return;
+
+  stationsByLine[lineCd]
+    .sort((a, b) => a.name.localeCompare(b.name, 'ja'))
+    .forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.g;        // station_g_cd
+      opt.textContent = s.name;
+      startSelect.appendChild(opt);
+    });
+});
+
+
+  // //プルダウン選択
+  // const startSelect = document.getElementById('startSelect');
+  
+  // Object.entries(stationGInfo).forEach(([g, info]) => {
+  //   const option = document.createElement('option');
+  //   option.value = g;               // station_g_cd
+  //   option.textContent = info.name; // 駅名
+  //   startSelect.appendChild(option);
+  // });
+  
+
+  
+  document.getElementById('result').textContent = '準備完了！ボタンを押してください';
+})();
+
+// ===== ボタン押下時 =====
+document.getElementById('searchBtn').addEventListener('click', async () => {
+  const resultDiv = document.getElementById('result');
+  const startG = document.getElementById('startSelect').value;
+
+
+  // 地図リセット
+  mapLayers.forEach(l => map.removeLayer(l));
+  mapLayers = [];
+
+  const goalG = allG[Math.floor(Math.random() * allG.length)];
+  resultDiv.textContent =
+    `最寄駅：${stationGInfo[startG].name}駅\n` +
+    `→ ゴール駅：${stationGInfo[goalG].name}駅\n\n計算中...`;
+
+  await new Promise(r => setTimeout(r, 50));
+
+  const path = bfsShortestPath(adj, startG, goalG);
+  if (!path) {
+    resultDiv.textContent += '\n経路が見つかりませんでした';
+    return;
+  }
+
+  const latlngs = [];
+  path.forEach((g, i) => {
+    const info = stationGInfo[g];
+    const ll = [info.lat, info.lon];
+    latlngs.push(ll);
+
+    const marker = L.circleMarker(ll, {
+      radius: i === 0 || i === path.length - 1 ? 10 : 5,
+      color: i === 0 ? 'red' : i === path.length - 1 ? 'red' : '#333',
+      fillOpacity: 1
+    }).addTo(map).bindPopup(info.name);
+
+    mapLayers.push(marker);
+  });
+
+  const line = L.polyline(latlngs, {
+    color: 'orange',
+    weight: 5
+  }).addTo(map);
+
+  mapLayers.push(line);
+  map.fitBounds(line.getBounds());
+
+  resultDiv.textContent =
+    `最寄駅：${stationGInfo[startG].name}駅\n` +
+    `→ ゴール駅：${stationGInfo[goalG].name}駅\n\n` +
+    path.map(g => '・' + stationGInfo[g].name + '駅').join('\n');
+});
+
+
+
+  
+</script>
+</body>
+</html>
