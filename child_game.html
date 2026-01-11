@@ -4,6 +4,46 @@
 <meta charset="UTF-8">
 <title>溜め攻撃ゲーム</title>
 <style>
+
+.button-row {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+button {
+  flex: 1 1 0px; /* 横幅自動調整 */
+  padding: 15px 0;
+  font-size: 5vw;
+  min-width: 80px;
+  min-height: 60px;
+  border-radius: 12px;
+  border: none;
+  color: #fff;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+button:active {
+  transform: translateY(2px);
+}
+
+.attack {
+  background: #e74c3c; /* 赤系 */
+}
+
+.support {
+  background: #3498db; /* 青系 */
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
   body { 
     font-family: sans-serif; 
     text-align: center; 
@@ -58,12 +98,20 @@
 <p>子供の頃を思い出してやってみましょう。※イラストは現在実装中。ちょっとまってね。</p>
 
 <div id="buttons">
-  <button id="btnTame" onclick="play('溜め')">溜め</button>
-  <button id="btnAttack" onclick="play('攻撃')">攻撃</button>
-  <button id="btnDefense" onclick="play('防御')">防御</button>
-  <button id="btnReflect" onclick="play('反射')">反射</button>
-  <button id="btnPierce" onclick="play('貫通')">貫通</button>
+  <!-- 上段: 攻撃系3つ -->
+  <div class="button-row">
+    <button id="btnAttack" class="attack" onclick="play('攻撃')">攻撃</button>
+    <button id="btnReflect" class="attack" onclick="play('反射')">反射</button>
+    <button id="btnPierce" class="attack" onclick="play('貫通')">貫通</button>
+  </div>
+
+  <!-- 下段: 溜め・防御 -->
+  <div class="button-row">
+    <button id="btnTame" class="support" onclick="play('溜め')">溜め</button>
+    <button id="btnDefense" class="support" onclick="play('防御')">防御</button>
+  </div>
 </div>
+
 
 <div id="status">
   <p>あなたの溜め: <span id="playerCharge">0</span></p>
@@ -75,6 +123,8 @@
 <button id="replay" onclick="resetGame()">もう一度遊ぶ</button>
 
 <script>
+
+  
 let playerCharge = 0;
 let enemyCharge = 0;
 
