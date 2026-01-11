@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>準備中</title>
+<title>準備中...</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <style>
@@ -305,22 +305,37 @@ function updateAllowedCompanies() {
 function refreshCompanyDropdown() {
   companySelect.innerHTML = '<option value="">選択してください</option>';
   
-  const type = companyTypeSelect.value;
-  if (!type || !companiesByType[type]) return;
+  // 選択されている事業者区分だけ
+  const checkedTypes = [];
+  document.querySelectorAll('#companyCheckboxes > div > label > input[type=checkbox]').forEach(typeCb => {
+    if (typeCb.checked) checkedTypes.push(typeCb.parentNode.textContent.trim());
+  });
 
-  companiesByType[type]
-    .filter(c => allowedCompanies.includes(c.cd)) // チェックされている会社のみ
-    .forEach(c => {
+  // 上位チェックボックスを取得
+  const typeDivs = document.querySelectorAll('#companyCheckboxes > div');
+  typeDivs.forEach(div => {
+    const typeCheckbox = div.querySelector('input[type=checkbox]');
+    const type = Object.keys(companiesByType).find(t => companiesByType[t].some(c => c.name === div.textContent.trim()));
+    if (!typeCheckbox.checked) return; // 上位未チェックならスキップ
+
+    // 上位チェックされている事業者区分の子会社のみ
+    const childCheckboxes = div.querySelectorAll('input[data-company-type="'+type+'"]');
+    childCheckboxes.forEach(cb => {
+      if (!cb.checked) return; // 子会社未チェックならスキップ
+      const company = companiesByType[type].find(c => c.cd === cb.value);
+      if (!company) return;
       const opt = document.createElement('option');
-      opt.value = c.cd;
-      opt.textContent = c.name;
+      opt.value = company.cd;
+      opt.textContent = company.name;
       companySelect.appendChild(opt);
     });
+  });
 
   // 会社プルダウン変更で路線プルダウン更新
   lineSelect.innerHTML = '<option value="">選択してください</option>';
   startSelect.innerHTML = '<option value="">選択してください</option>';
 }
+
 
 
   generateCompanyCheckboxes();
