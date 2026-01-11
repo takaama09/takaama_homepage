@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>最強の鉄道旅行計画を立てよう！</title>
+<title>準備中</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <style>
@@ -30,7 +30,7 @@
 </head>
 <body>
 
-<h2>鉄道の旅行計画を立てよう！</h2>
+<h2>最強の鉄道旅行計画を立てよう！</h2>
   
 <div id="filterRow">
 <div style="margin-bottom:10px;">
@@ -144,7 +144,7 @@ function bfsShortestPath(adj, start, goal) {
   });
 
 
-  const jrLines = new Set();
+  //const jrLines = new Set();
   lineText.replace(/\r/g,'').split('\n').slice(1).forEach(r => {
     const c = r.split(',');
     //if (c[1] === '4') jrLines.add(c[0]);　//この辺あとで修正？
@@ -205,25 +205,41 @@ function bfsShortestPath(adj, start, goal) {
      }
   });
 
-  joinText.replace(/\r/g,'').split('\n').slice(1).forEach(r => {
-    const c = r.split(',');
-    if (c.length < 3) return;
+// まず line_cd → company_cd マップ作成
+const lineToCompany = {};
+lineText.replace(/\r/g,'').split('\n').slice(1).forEach(r => {
+  const c = r.split(',');
+  if (c.length < 2) return;
+  const line_cd = c[0];
+  const company_cd = c[1];
+  lineToCompany[line_cd] = company_cd;
+});
 
-    const line_cd = c[0];
-    const s1 = c[1];
-    const s2 = c[2];
+// join 読み込み
+joinText.replace(/\r/g,'').split('\n').slice(1).forEach(r => {
+  const c = r.split(',');
+  if (c.length < 3) return;
 
-    if (!(s1 in stationCdToG) || !(s2 in stationCdToG)) return;
+  const line_cd = c[0];
+  const s1 = c[1];
+  const s2 = c[2];
 
-    const g1 = stationCdToG[s1];
-    const g2 = stationCdToG[s2];
-    if (g1 === g2) return;
+  if (!(s1 in stationCdToG) || !(s2 in stationCdToG)) return;
 
-    adj[g1] = adj[g1] || new Set();
-    adj[g2] = adj[g2] || new Set();
-    adj[g1].add(g2);
-    adj[g2].add(g1);
-  });
+  const g1 = stationCdToG[s1];
+  const g2 = stationCdToG[s2];
+  if (g1 === g2) return;
+
+  const company_cd = lineToCompany[line_cd];
+  if (!company_cd) return;
+
+  adj[g1] = adj[g1] || [];
+  adj[g2] = adj[g2] || [];
+
+  adj[g1].push({ to: g2, company: company_cd });
+  adj[g2].push({ to: g1, company: company_cd });
+});
+
 
   allG = Object.keys(adj);
 
@@ -244,12 +260,22 @@ const companyTypeLabel = {
 };
 
 // company_type を入れる
-Object.keys(companiesByType).forEach(type => {
+// Object.keys(companiesByType).forEach(type => {
+//   const opt = document.createElement('option');
+//   opt.value = type;
+//   opt.textContent = companyTypeLabel[type] || type;
+//   companyTypeSelect.appendChild(opt);
+// });
+const companyTypeOrder = ['1', '2', '3', '0'];
+
+companyTypeOrder.forEach(type => {
+  if (!companiesByType[type]) return;
   const opt = document.createElement('option');
   opt.value = type;
   opt.textContent = companyTypeLabel[type] || type;
   companyTypeSelect.appendChild(opt);
 });
+
 
 companyTypeSelect.addEventListener('change', () => {
   companySelect.innerHTML = '<option value="">選択してください</option>';
@@ -340,6 +366,10 @@ document.getElementById('searchBtn').addEventListener('click', async () => {
   const resultDiv = document.getElementById('result');
   const startG = document.getElementById('startSelect').value;
 
+if (!startG || !stationGInfo[startG]) {
+  resultDiv.textContent = '最寄駅を選択してください';
+  return;
+}
 
   // 地図リセット
   mapLayers.forEach(l => map.removeLayer(l));
