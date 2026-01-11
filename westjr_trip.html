@@ -2,90 +2,124 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>テスト</title>
+<title>JR西日本 最短経路テスト</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <style>
-  #map { height: 80vh; width: 100%; }
-  #result { font-size: 18px; padding: 10px; }
+  body { font-family: sans-serif; }
+  #result { white-space: pre-line; font-size: 16px; }
 </style>
 </head>
 <body>
 
-<h2>JR西日本限定で旅のルートを考えます。</h2>
-<div id="result">読み込み中...</div>
-<div id="map"></div>
+<h2>JR西日本：最短経路探索</h2>
+<div id="result">計算中...</div>
 
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
-const map = L.map('map').setView([35.5, 135], 6);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors'
-}).addTo(map);
-
-// CSV URL
-const lineURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station/line.csv';
 const stationURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station/station.csv';
+const lineURL    = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station/line.csv';
+const joinURL    = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station/join.csv';
 
 (async () => {
-  try {
-    const [lineRes, stationRes] = await Promise.all([
-      fetch(lineURL), fetch(stationURL)
-    ]);
+  const resultDiv = document.getElementById('result');
 
-    const lineData = (await lineRes.text()).replace(/^\uFEFF/, '');
-    const stationData = (await stationRes.text()).replace(/^\uFEFF/, '');
+  const [stationText, lineText, joinText] = await Promise.all([
+    fetch(stationURL).then(r => r.text()),
+    fetch(lineURL).then(r => r.text()),
+    fetch(joinURL).then(r => r.text())
+  ]);
 
-    // line_cd -> company_cd
-    const lineCompanyMap = {};
-    lineData.split('\n').slice(1).forEach(row => {
-      if(!row) return;
-      const cols = row.split(',');
-      const line_cd = cols[0];
-      const company_cd = Number(cols[1]);
-      if(line_cd && company_cd === 4) {
-        lineCompanyMap[line_cd] = 4;
+  // ===== JR西日本の路線 =====
+  const jrLines = new Set();
+  lineText.replace(/\r/g,'').split('\n').slice(1).forEach(row => {
+    const c = row.split(',');
+    if (c[1] === '4') jrLines.add(c[0]);
+  });
+
+  // ===== station_cd → station_g_cd =====
+  const stationCdToG = {};
+  // station_g_cd → 駅名
+  const stationGToName = {};
+
+  stationText.replace(/\r/g,'').split('\n').slice(1).forEach(row => {
+    const c = row.split(',');
+    if (c.length < 6) return;
+
+    const station_cd = c[0];
+    const station_g_cd = c[1];
+    const name = c[2];
+    const line_cd = c[5];
+
+    if (!jrLines.has(line_cd)) return;
+
+    stationCdToG[station_cd] = station_g_cd;
+    if (!stationGToName[station_g_cd]) {
+      stationGToName[station_g_cd] = name;
+    }
+  });
+
+  // ===== 隣接リスト作成 =====
+  const adj = {};
+
+  joinText.replace(/\r/g,'').split('\n').slice(1).forEach(row => {
+    const c = row.split(',');
+    const s1 = c[0];
+    const s2 = c[1];
+    const line_cd = c[2];
+
+    if (!jrLines.has(line_cd)) return;
+    if (!(s1 in stationCdToG) || !(s2 in stationCdToG)) return;
+
+    const g1 = stationCdToG[s1];
+    const g2 = stationCdToG[s2];
+    if (g1 === g2) return;
+
+    adj[g1] ??= new Set();
+    adj[g2] ??= new Set();
+    adj[g1].add(g2);
+    adj[g2].add(g1);
+  });
+
+  // ===== BFS =====
+  function bfsShortestPath(adj, start, goal) {
+    const visited = new Set();
+    const queue = [[start]];
+
+    while (queue.length) {
+      const path = queue.shift();
+      const node = path[path.length - 1];
+
+      if (node === goal) return path;
+      if (visited.has(node)) continue;
+
+      visited.add(node);
+      for (const n of adj[node] ?? []) {
+        queue.push([...path, n]);
       }
-    });
-
-    // station_g_cd -> 駅名（JR西日本のみ）
-    const stationGToName = {};
-    stationData.split('\n').slice(1).forEach(row => {
-      if(!row) return;
-      const cols = row.split(',');
-      if(cols.length < 6) return;
-
-      const station_g_cd = cols[1];
-      const station_name = cols[2];
-      const line_cd = cols[5];
-
-      if(!station_g_cd || !station_name) return;
-      if(!lineCompanyMap[line_cd]) return; // JR西日本のみ
-
-      // 最初に出てきた駅名を代表にする
-      if(!stationGToName[station_g_cd]) {
-        stationGToName[station_g_cd] = station_name;
-      }
-    });
-
-    // ===== 表示 =====
-    const startG = '1160308'; // 甲南山手の station_g_cd
-    const allG = Object.keys(stationGToName);
-    const goalG = allG[Math.floor(Math.random() * allG.length)];
-
-    const startName = stationGToName[startG];
-    const goalName = stationGToName[goalG];
-
-    document.getElementById('result').innerHTML =
-      `最寄駅：${startName}駅<br>→ ゴール駅：${goalName}駅`;
-
-    console.log('start', startG, startName);
-    console.log('goal', goalG, goalName);
-
-  } catch(err) {
-    console.error(err);
-    alert('エラーが発生しました');
+    }
+    return null;
   }
+
+  // ===== 実行 =====
+  const start = '1160308'; // 甲南山手
+  const allStations = Object.keys(adj);
+  const goal = allStations[Math.floor(Math.random() * allStations.length)];
+
+  const path = bfsShortestPath(adj, start, goal);
+
+  if (!path) {
+    resultDiv.textContent = '経路が見つかりませんでした';
+    return;
+  }
+
+  let out = '最短経路：\n';
+  path.forEach(g => {
+    out += '・' + stationGToName[g] + '\n';
+  });
+
+  out += `\nスタート: ${stationGToName[start]} (${start})`;
+  out += `\nゴール: ${stationGToName[goal]} (${goal})`;
+
+  resultDiv.textContent = out;
 })();
 </script>
 
