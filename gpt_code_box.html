@@ -97,6 +97,10 @@ const joinURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/ma
 const companyURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station/company.csv';
 
 
+//あとで色々変える
+const allowedCompanies = ['JR-WEST']; // JR西日本だけ
+const path = bfsShortestPath(adj, startG, goalG, allowedCompanies);
+
 // BFS
 function bfsShortestPath(adj, start, goal) {
   const visited = new Set();
@@ -109,8 +113,9 @@ function bfsShortestPath(adj, start, goal) {
 
     if (!visited.has(node)) {
       visited.add(node);
-      for (const nb of adj[node] || []) {
-        queue.push([...path, nb]);
+      for (const edge of adj[node] || []) {
+        if (!allowedCompanies.includes(edge.company)) continue; // ← 会社制限
+        queue.push([...path, edge.to]);
       }
     }
   }
