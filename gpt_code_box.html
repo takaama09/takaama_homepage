@@ -193,16 +193,16 @@ function bfsShortestPath(adj, start, goal) {
   　});
 
 
-    // stationCdToG[station_cd] = g;
+    stationCdToG[station_cd] = g;
     
-    // // station_g_cd の代表駅（最初の1件だけ）
-    // if (!stationGInfo[g]) {
-    //   stationGInfo[g] = {
-    //     name: name,
-    //     lat: lat,
-    //     lon: lon
-    //   };
-    // }
+    // station_g_cd の代表駅（最初の1件だけ）
+    if (!stationGInfo[g]) {
+       stationGInfo[g] = {
+         name: name,
+         lat: lat,
+         lon: lon
+       };
+     }
   });
 
   joinText.replace(/\r/g,'').split('\n').slice(1).forEach(r => {
