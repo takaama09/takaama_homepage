@@ -10,7 +10,7 @@
 </style>
 </head>
 <body>
-<h2>JR路線図を地図に表示しました！</h2>
+<h2>JR路線図を地図に表示します！</h2>
 <div id="map"></div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -53,7 +53,7 @@ const joinURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/re
             const lat = parseFloat(cols[10]);
             const lon = parseFloat(cols[9]);
             const line_cd = cols[5];
-            const e_status = c[7];
+            const e_status = cols[7];
 
             if (!code || !name || isNaN(lat) || isNaN(lon)) return;
             if (!lineCompanyMap[line_cd]) return;
