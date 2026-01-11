@@ -6,20 +6,25 @@
 <style>
   body { font-family: sans-serif; text-align: center; margin-top: 50px; }
   button { margin: 5px; padding: 10px 20px; font-size: 16px; }
-  #log { margin-top: 20px; white-space: pre-line; }
+  #log { margin-top: 20px; white-space: pre-line; font-size: 18px; }
+  #result { margin-top: 20px; font-size: 24px; font-weight: bold; }
+  .win { color: green; }
+  .lose { color: red; }
+  .draw { color: gray; }
+  #replay { display: none; margin-top: 20px; padding: 10px 20px; font-size: 16px; }
 </style>
 </head>
 <body>
 
-<h1>溜め攻撃ゲーム</h1>
-<p>溜め、攻撃、防御、反射、貫通の5つのボタンから選んで戦おう！</p>
+<h1>子供のころよくやったゲーム</h1>
+<p>子供の頃を思い出してやってみましょう。※イラストは現在実装中。ちょっとまってね。</p>
 
-<div>
-  <button onclick="play('溜め')">溜め</button>
-  <button onclick="play('攻撃')">攻撃</button>
-  <button onclick="play('防御')">防御</button>
-  <button onclick="play('反射')">反射</button>
-  <button onclick="play('貫通')">貫通</button>
+<div id="buttons">
+  <button id="btnTame" onclick="play('溜め')">溜め</button>
+  <button id="btnAttack" onclick="play('攻撃')">攻撃</button>
+  <button id="btnDefense" onclick="play('防御')">防御</button>
+  <button id="btnReflect" onclick="play('反射')">反射</button>
+  <button id="btnPierce" onclick="play('貫通')">貫通</button>
 </div>
 
 <div id="status">
@@ -28,78 +33,108 @@
 </div>
 
 <div id="log"></div>
+<div id="result"></div>
+<button id="replay" onclick="resetGame()">もう一度遊ぶ</button>
 
 <script>
 let playerCharge = 0;
 let enemyCharge = 0;
 
+function updateButtons() {
+  // 溜め不足ならボタンを無効化
+  document.getElementById('btnAttack').disabled = playerCharge < 1;
+  document.getElementById('btnReflect').disabled = playerCharge < 3;
+  document.getElementById('btnPierce').disabled = playerCharge < 5;
+  document.getElementById('btnTame').disabled = false;
+  document.getElementById('btnDefense').disabled = false;
+}
+
 function play(playerMove) {
-  // AIの動き
+  updateButtons();
+
+  // AIの選択（溜め不足なら溜めを選ぶ）
   const moves = ['溜め','攻撃','防御','反射','貫通'];
-  const enemyMove = moves[Math.floor(Math.random() * moves.length)];
+  const enemyPossibleMoves = moves.filter(move => {
+    if (move === '攻撃' && enemyCharge < 1) return false;
+    if (move === '反射' && enemyCharge < 3) return false;
+    if (move === '貫通' && enemyCharge < 5) return false;
+    return true;
+  });
+  const enemyMove = enemyPossibleMoves[Math.floor(Math.random() * enemyPossibleMoves.length)];
 
   let log = `あなた: ${playerMove}  |  相手: ${enemyMove}\n`;
 
-  // 溜めの判定
-  if (playerMove === '溜め') {
-    playerCharge++;
-  }
-  if (enemyMove === '溜め') {
-    enemyCharge++;
-  }
+  // 溜め処理
+  if (playerMove === '溜め') playerCharge++;
+  if (enemyMove === '溜め') enemyCharge++;
 
-  // 勝敗判定関数
-  function checkMove(move, charge, oppMove, oppCharge) {
+  function checkMove(move, charge) {
     if (move === '攻撃' && charge < 1) return '無効';
     if (move === '反射' && charge < 3) return '無効';
     if (move === '貫通' && charge < 5) return '無効';
     return '有効';
   }
 
-  const playerValid = checkMove(playerMove, playerCharge, enemyMove, enemyCharge);
-  const enemyValid = checkMove(enemyMove, enemyCharge, playerMove, playerCharge);
+  const playerValid = checkMove(playerMove, playerCharge);
+  const enemyValid = checkMove(enemyMove, enemyCharge);
 
-  // 勝敗処理
+  // 有効なら溜めリセット
+  if (playerValid === '有効' && ['攻撃','反射','貫通'].includes(playerMove)) playerCharge = 0;
+  if (enemyValid === '有効' && ['攻撃','反射','貫通'].includes(enemyMove)) enemyCharge = 0;
+
+  // 勝敗判定
   let result = '';
-
-  if (playerValid !== '有効') log += 'あなたの技は溜め不足で無効になった。\n';
-  if (enemyValid !== '有効') log += '相手の技は溜め不足で無効になった。\n';
-
-  if (playerValid === '有効') {
-    if (playerMove === '攻撃') playerCharge = 0;
-    if (playerMove === '反射') playerCharge = 0;
-    if (playerMove === '貫通') playerCharge = 0;
-  }
-
-  if (enemyValid === '有効') {
-    if (enemyMove === '攻撃') enemyCharge = 0;
-    if (enemyMove === '反射') enemyCharge = 0;
-    if (enemyMove === '貫通') enemyCharge = 0;
-  }
-
-  // 勝敗判定ルール
   if (playerValid === '有効' && enemyValid === '有効') {
-    // 貫通優先
-    if (playerMove === '貫通' && enemyMove !== '貫通') result = 'あなたの勝ち';
-    else if (enemyMove === '貫通' && playerMove !== '貫通') result = 'あなたの負け';
-    // 攻撃 vs 溜め
-    else if (playerMove === '攻撃' && enemyMove === '溜め') result = 'あなたの勝ち';
-    else if (enemyMove === '攻撃' && playerMove === '溜め') result = 'あなたの負け';
-    // 攻撃 vs 反射
-    else if (playerMove === '攻撃' && enemyMove === '反射') result = 'あなたの負け';
-    else if (enemyMove === '攻撃' && playerMove === '反射') result = 'あなたの勝ち';
-    // 反射は貫通以外反射する
-    else if (playerMove === '反射' && enemyMove === '攻撃') result = 'あなたの勝ち';
-    else if (enemyMove === '反射' && playerMove === '攻撃') result = 'あなたの負け';
-    else result = '何も起きなかった';
+    if (playerMove === '貫通' && enemyMove !== '貫通') result = 'win';
+    else if (enemyMove === '貫通' && playerMove !== '貫通') result = 'lose';
+    else if (playerMove === '攻撃' && enemyMove === '溜め') result = 'win';
+    else if (enemyMove === '攻撃' && playerMove === '溜め') result = 'lose';
+    else if (playerMove === '攻撃' && enemyMove === '反射') result = 'lose';
+    else if (enemyMove === '攻撃' && playerMove === '反射') result = 'win';
+    else if (playerMove === '反射' && enemyMove === '攻撃') result = 'win';
+    else if (enemyMove === '反射' && playerMove === '攻撃') result = 'lose';
+    else result = 'draw';
+  } else {
+    if (playerValid === '無効' && enemyValid === '無効') result = 'draw';
+    else if (playerValid === '無効') result = 'lose';
+    else if (enemyValid === '無効') result = 'win';
   }
 
-  log += result ? `結果: ${result}\n` : '結果: なし\n';
+  log += '結果: ';
+  if (result === 'win') log += 'あなたの勝ち!';
+  else if (result === 'lose') log += 'あなたの負け…';
+  else log += '何も起きなかった';
 
   document.getElementById('log').innerText = log;
   document.getElementById('playerCharge').innerText = playerCharge;
   document.getElementById('enemyCharge').innerText = enemyCharge;
+
+  // 勝敗がついた場合、ボタン無効化、結果表示、再戦ボタン出現
+  if (result === 'win' || result === 'lose') {
+    ['btnTame','btnAttack','btnDefense','btnReflect','btnPierce'].forEach(id => {
+      document.getElementById(id).disabled = true;
+    });
+    const resDiv = document.getElementById('result');
+    if (result === 'win') resDiv.innerHTML = '<span class="win">あなたの勝ち!</span>';
+    else resDiv.innerHTML = '<span class="lose">あなたの負け…</span>';
+    document.getElementById('replay').style.display = 'inline-block';
+  } else {
+    updateButtons();
+  }
 }
+
+function resetGame() {
+  playerCharge = 0;
+  enemyCharge = 0;
+  document.getElementById('playerCharge').innerText = playerCharge;
+  document.getElementById('enemyCharge').innerText = enemyCharge;
+  document.getElementById('log').innerText = '';
+  document.getElementById('result').innerText = '';
+  document.getElementById('replay').style.display = 'none';
+  updateButtons();
+}
+
+updateButtons();
 </script>
 
 </body>
