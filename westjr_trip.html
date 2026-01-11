@@ -13,7 +13,7 @@
 </head>
 <body>
 
-<h2>JR西日本限定でランダム駅への最短経路を表示するサイトです。</h2>
+<h2>JR西日本限定でランダム駅への最短経路を表示するサイトです！</h2>
 <div id="result">読み込み中...</div>
 <div id="map"></div>
 
@@ -90,11 +90,14 @@ function bfsShortestPath(adj, start, goal) {
       const lat = parseFloat(c[10]);
       
       if (!jrLines.has(line_cd)) return;
+      if (isNaN(lat) || isNaN(lon)) return; 
 
       stationCdToG[station_cd] = station_g_cd;
       if (!stationGToName[station_g_cd]) {
         stationGToName[station_g_cd] = station_name;
       }
+
+      
     });
 
     // 隣接リスト作成（Python版と同じ）
