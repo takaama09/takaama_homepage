@@ -2,120 +2,145 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>溜め攻撃ゲーム</title>
+<title>子供の頃やったゲーム（β版）</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
-
-.button-row {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  margin-bottom: 10px;
-  flex-wrap: wrap;
-}
-
-button {
-  flex: 1 1 0px; /* 横幅自動調整 */
-  padding: 15px 0;
-  font-size: 5vw;
-  min-width: 80px;
-  min-height: 60px;
-  border-radius: 12px;
-  border: none;
-  color: #fff;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-  cursor: pointer;
-  transition: transform 0.1s;
-}
-
-button:active {
-  transform: translateY(2px);
-}
-
-.attack {
-  background: #e74c3c; /* 赤系 */
-}
-
-.support {
-  background: #3498db; /* 青系 */
-}
-
-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-  body { 
-    font-family: sans-serif; 
-    text-align: center; 
-    margin: 20px; 
-    padding: 0 10px; 
+  body {
+    font-family: sans-serif;
+    text-align: center;
+    background: #f4f6f8;
+    color: #222;
+    margin: 0;
+    padding: 20px;
   }
 
-  button { 
-    margin: 5px; 
-    padding: 15px 25px; 
-    font-size: 5vw; /* 画面幅に応じて文字サイズ */
-    min-width: 80px; /* 小さすぎないように最小幅 */
-    min-height: 50px;
+  h1 {
+    font-size: 6vw;
+    margin-bottom: 20px;
   }
 
-  #log { 
-    margin-top: 20px; 
-    white-space: pre-line; 
-    font-size: 4vw; /* 画面幅に応じて文字サイズ */
+  #buttons {
+    margin-top: 30px;
   }
 
-  #result { 
-    margin-top: 20px; 
-    font-size: 6vw; 
-    font-weight: bold; 
+  .button-row {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
   }
 
-  .win { color: green; }
-  .lose { color: red; }
-  .draw { color: gray; }
-
-  #replay { 
-    display: none; 
-    margin-top: 20px; 
-    padding: 12px 25px; 
-    font-size: 5vw; 
+  .button-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 
-  /* スマホ画面向け微調整 */
-  @media (max-width: 480px) {
-    button { padding: 18px 30px; }
-    #log { font-size: 5vw; }
-    #result { font-size: 7vw; }
-    #replay { font-size: 6vw; padding: 15px 30px; }
+  button {
+    flex: 1 1 0px;
+    padding: 15px 0;
+    font-size: 5vw;
+    min-width: 80px;
+    min-height: 60px;
+    border-radius: 12px;
+    border: none;
+    color: #fff;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    cursor: pointer;
+    transition: transform 0.1s;
   }
+
+  button:active {
+    transform: translateY(2px);
+  }
+
+  .attack { background: #e74c3c; } /* 赤系 */
+  .support { background: #3498db; } /* 青系 */
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .charge-bar {
+    width: 80%;
+    height: 6px;
+    background: #ccc;
+    border-radius: 3px;
+    margin-top: 5px;
+    overflow: hidden;
+  }
+
+  .charge-fill {
+    height: 100%;
+    width: 0%;
+    background: #f1c40f;
+    transition: width 0.2s;
+  }
+
+  #log {
+    margin-top: 20px;
+    white-space: pre-line;
+    font-size: 4vw;
+  }
+
+  #result {
+    margin-top: 20px;
+    font-size: 6vw;
+    font-weight: bold;
+  }
+
+  .win { color: #e74c3c; }  /* 勝ち赤 */
+  .lose { color: #3498db; } /* 負け青 */
+
+  #replay {
+    display: none;
+    margin-top: 20px;
+    padding: 12px 25px;
+    font-size: 5vw;
+    background-color: #f59e0b; /* 明るいオレンジ */
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    transition: transform 0.1s;
+  }
+
+  #replay:active { transform: translateY(2px); }
+
 </style>
-
 </head>
 <body>
 
-<h1>子供のころよくやったゲーム</h1>
-<p>子供の頃を思い出してやってみましょう。※イラストは現在実装中。ちょっとまってね。</p>
+<h1>子供の頃やったゲーム（β版）</h1>
 
 <div id="buttons">
   <!-- 上段: 攻撃系3つ -->
   <div class="button-row">
-    <button id="btnAttack" class="attack" onclick="play('攻撃')">攻撃</button>
-    <button id="btnReflect" class="attack" onclick="play('反射')">反射</button>
-    <button id="btnPierce" class="attack" onclick="play('貫通')">貫通</button>
+    <div class="button-wrapper">
+      <button id="btnAttack" class="attack" onclick="play('攻撃')">攻撃</button>
+      <div class="charge-bar" id="barAttack"><div class="charge-fill"></div></div>
+    </div>
+    <div class="button-wrapper">
+      <button id="btnReflect" class="attack" onclick="play('反射')">反射</button>
+      <div class="charge-bar" id="barReflect"><div class="charge-fill"></div></div>
+    </div>
+    <div class="button-wrapper">
+      <button id="btnPierce" class="attack" onclick="play('貫通')">貫通</button>
+      <div class="charge-bar" id="barPierce"><div class="charge-fill"></div></div>
+    </div>
   </div>
 
-  <!-- 下段: 溜め・防御 -->
+  <!-- 下段: サポート系2つ -->
   <div class="button-row">
-    <button id="btnTame" class="support" onclick="play('溜め')">溜め</button>
-    <button id="btnDefense" class="support" onclick="play('防御')">防御</button>
+    <div class="button-wrapper">
+      <button id="btnTame" class="support" onclick="play('溜め')">溜め</button>
+      <div class="charge-bar" id="barTame"><div class="charge-fill" style="width:100%"></div></div>
+    </div>
+    <div class="button-wrapper">
+      <button id="btnDefense" class="support" onclick="play('防御')">防御</button>
+      <div class="charge-bar" id="barDefense"><div class="charge-fill" style="width:100%"></div></div>
+    </div>
   </div>
-</div>
-
-
-<div id="status">
-  <p>あなたの溜め: <span id="playerCharge">0</span></p>
-  <p>相手の溜め: <span id="enemyCharge">0</span></p>
 </div>
 
 <div id="log"></div>
@@ -123,106 +148,85 @@ button:disabled {
 <button id="replay" onclick="resetGame()">もう一度遊ぶ</button>
 
 <script>
-
-  
 let playerCharge = 0;
 let enemyCharge = 0;
 
-function updateButtons() {
-  // 溜め不足ならボタンを無効化
-  document.getElementById('btnAttack').disabled = playerCharge < 1;
-  document.getElementById('btnReflect').disabled = playerCharge < 3;
-  document.getElementById('btnPierce').disabled = playerCharge < 5;
-  document.getElementById('btnTame').disabled = false;
-  document.getElementById('btnDefense').disabled = false;
+function updateChargeBars() {
+  document.getElementById('barAttack').querySelector('.charge-fill').style.width = Math.min(playerCharge,1)/1*100 + '%';
+  document.getElementById('barReflect').querySelector('.charge-fill').style.width = Math.min(playerCharge,3)/3*100 + '%';
+  document.getElementById('barPierce').querySelector('.charge-fill').style.width = Math.min(playerCharge,5)/5*100 + '%';
 }
 
 function play(playerMove) {
-  updateButtons();
+  const log = document.getElementById('log');
+  // 溜め条件チェック
+  if((playerMove==='攻撃' && playerCharge<1) || 
+     (playerMove==='反射' && playerCharge<3) ||
+     (playerMove==='貫通' && playerCharge<5)) return;
 
-  // AIの選択（溜め不足なら溜めを選ぶ）
-  const moves = ['溜め','攻撃','防御','反射','貫通'];
+  // AIの手を決定
+  const moves = ['溜め','防御','攻撃','反射','貫通'];
   const enemyPossibleMoves = moves.filter(move => {
-    if (move === '攻撃' && enemyCharge < 1) return false;
-    if (move === '反射' && enemyCharge < 3) return false;
-    if (move === '貫通' && enemyCharge < 5) return false;
+    if(move==='攻撃' && enemyCharge<1) return false;
+    if(move==='反射' && enemyCharge<3) return false;
+    if(move==='貫通' && enemyCharge<5) return false;
     return true;
   });
-  const enemyMove = enemyPossibleMoves[Math.floor(Math.random() * enemyPossibleMoves.length)];
+  const enemyMove = enemyPossibleMoves[Math.floor(Math.random()*enemyPossibleMoves.length)];
 
-  let log = `あなた: ${playerMove}  |  相手: ${enemyMove}\n`;
-
-  // 溜め処理
-  if (playerMove === '溜め') playerCharge++;
-  if (enemyMove === '溜め') enemyCharge++;
-
-  function checkMove(move, charge) {
-    if (move === '攻撃' && charge < 1) return '無効';
-    if (move === '反射' && charge < 3) return '無効';
-    if (move === '貫通' && charge < 5) return '無効';
-    return '有効';
-  }
-
-  const playerValid = checkMove(playerMove, playerCharge);
-  const enemyValid = checkMove(enemyMove, enemyCharge);
-
-  // 有効なら溜めリセット
-  if (playerValid === '有効' && ['攻撃','反射','貫通'].includes(playerMove)) playerCharge = 0;
-  if (enemyValid === '有効' && ['攻撃','反射','貫通'].includes(enemyMove)) enemyCharge = 0;
+  log.innerText += `あなた: ${playerMove}  |  相手: ${enemyMove}\n`;
 
   // 勝敗判定
-  let result = '';
-  if (playerValid === '有効' && enemyValid === '有効') {
-    if (playerMove === '貫通' && enemyMove !== '貫通') result = 'win';
-    else if (enemyMove === '貫通' && playerMove !== '貫通') result = 'lose';
-    else if (playerMove === '攻撃' && enemyMove === '溜め') result = 'win';
-    else if (enemyMove === '攻撃' && playerMove === '溜め') result = 'lose';
-    else if (playerMove === '攻撃' && enemyMove === '反射') result = 'lose';
-    else if (enemyMove === '攻撃' && playerMove === '反射') result = 'win';
-    else if (playerMove === '反射' && enemyMove === '攻撃') result = 'win';
-    else if (enemyMove === '反射' && playerMove === '攻撃') result = 'lose';
-    else result = 'draw';
-  } else {
-    if (playerValid === '無効' && enemyValid === '無効') result = 'draw';
-    else if (playerValid === '無効') result = 'lose';
-    else if (enemyValid === '無効') result = 'win';
+  let result = null;
+  if(playerMove==='攻撃') {
+    if(enemyMove==='溜め') result='win';
+    else if(enemyMove==='防御') result='draw';
+    else if(enemyMove==='反射') result='lose';
+    else if(enemyMove==='貫通') result='lose';
+    playerCharge=0;
   }
+  else if(playerMove==='反射') {
+    if(enemyMove==='攻撃') result='win';
+    else if(enemyMove==='貫通') result=null;
+    playerCharge=0;
+  }
+  else if(playerMove==='貫通') {
+    playerCharge=0;
+    if(enemyMove==='攻撃' || enemyMove==='反射' || enemyMove==='防御') result='win';
+  }
+  else if(playerMove==='溜め') playerCharge++;
+  else if(playerMove==='防御') {}
 
-  log += '結果: ';
-  if (result === 'win') log += 'あなたの勝ち!';
-  else if (result === 'lose') log += 'あなたの負け…';
-  else log += '何も起きなかった';
+  // 敵も溜め処理
+  if(enemyMove==='溜め') enemyCharge++;
+  else if(['攻撃','反射','貫通'].includes(enemyMove)) enemyCharge=0;
 
-  document.getElementById('log').innerText = log;
-  document.getElementById('playerCharge').innerText = playerCharge;
-  document.getElementById('enemyCharge').innerText = enemyCharge;
+  updateChargeBars();
 
-  // 勝敗がついた場合、ボタン無効化、結果表示、再戦ボタン出現
-  if (result === 'win' || result === 'lose') {
-    ['btnTame','btnAttack','btnDefense','btnReflect','btnPierce'].forEach(id => {
-      document.getElementById(id).disabled = true;
+  // 勝敗表示
+  if(result==='win' || result==='lose') {
+    ['btnTame','btnAttack','btnDefense','btnReflect','btnPierce'].forEach(id=>{
+      document.getElementById(id).disabled=true;
     });
     const resDiv = document.getElementById('result');
-    if (result === 'win') resDiv.innerHTML = '<span class="win">あなたの勝ち!</span>';
+    if(result==='win') resDiv.innerHTML = '<span class="win">あなたの勝ち！</span>';
     else resDiv.innerHTML = '<span class="lose">あなたの負け…</span>';
-    document.getElementById('replay').style.display = 'inline-block';
-  } else {
-    updateButtons();
+
+    document.getElementById('replay').style.display='inline-block';
   }
 }
 
 function resetGame() {
-  playerCharge = 0;
-  enemyCharge = 0;
-  document.getElementById('playerCharge').innerText = playerCharge;
-  document.getElementById('enemyCharge').innerText = enemyCharge;
-  document.getElementById('log').innerText = '';
-  document.getElementById('result').innerText = '';
-  document.getElementById('replay').style.display = 'none';
-  updateButtons();
+  playerCharge=0;
+  enemyCharge=0;
+  updateChargeBars();
+  document.getElementById('log').innerText='';
+  document.getElementById('result').innerHTML='';
+  ['btnTame','btnAttack','btnDefense','btnReflect','btnPierce'].forEach(id=>{
+    document.getElementById(id).disabled=false;
+  });
+  document.getElementById('replay').style.display='none';
 }
-
-updateButtons();
 </script>
 
 </body>
