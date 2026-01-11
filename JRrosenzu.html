@@ -53,7 +53,7 @@ const joinURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/re
             const lat = parseFloat(cols[10]);
             const lon = parseFloat(cols[9]);
             const line_cd = cols[5];
-            const e_status = cols[13];
+            const e_status = parseInt(cols[13]);
 
             if (!code || !name || isNaN(lat) || isNaN(lon)) return;
             if (!lineCompanyMap[line_cd]) return;
