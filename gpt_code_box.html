@@ -625,11 +625,45 @@ document.getElementById('searchBtn').addEventListener('click', async () => {
   mapLayers.push(line);
   map.fitBounds(line.getBounds());
 
-  resultDiv.textContent = 
-    `最寄駅：${stationGInfo[startG].name}駅\n→ ゴール駅：${stationGInfo[goalG].name}駅\n\n` +
-    //path.map(g=>'・'+stationGInfo[g].name+'駅').join('\n'); //縦に書くパターン
-  path.map(g => stationGInfo[g].name + '駅').join(' → ');
+  // resultDiv.textContent = 
+  //   `最寄駅：${stationGInfo[startG].name}駅\n→ ゴール駅：${stationGInfo[goalG].name}駅\n\n` +
+  //   //path.map(g=>'・'+stationGInfo[g].name+'駅').join('\n'); //縦に書くパターン
+  // path.map(g => stationGInfo[g].name + '駅').join(' → ');
 
+// 結果表示
+resultDiv.innerHTML = 
+  `最寄駅：<span style="font-weight:bold; color:red;">${stationGInfo[startG].name}駅</span> (${getCompanyNameByStation(startG)}) → ` +
+  `ゴール駅：<span style="font-weight:bold; color:red;">${stationGInfo[goalG].name}駅</span> (${getCompanyNameByStation(goalG)})<br><br>` +
+  path.map((g, i) => {
+    const companyName = getCompanyNameByStation(g); // 会社名を取得
+    if (i === 0 || i === path.length - 1) {
+      return `<span style="font-weight:bold; color:red;">${stationGInfo[g].name}駅</span> (${companyName})`;
+    } else {
+      return `${stationGInfo[g].name}駅 (${companyName})`;
+    }
+  }).join(' → ');
+
+// 駅コードから会社名を取得する関数
+function getCompanyNameByStation(g) {
+  for (const [lineCd, stations] of Object.entries(stationsByLine)) {
+    if (stations.some(s => s.g === g)) {
+      const companyCd = Object.entries(linesByCompany).find(([cCd, lines]) =>
+        lines.some(l => l.cd === lineCd)
+      )?.[0];
+      if (companyCd) {
+        // companiesByType から名前を検索
+        for (const comps of Object.values(companiesByType)) {
+          const comp = comps.find(c => c.cd === companyCd);
+          if (comp) return comp.name;
+        }
+      }
+    }
+  }
+  return '不明';
+}
+  
+
+  
 });
 </script>
 </body>
