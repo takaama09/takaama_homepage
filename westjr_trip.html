@@ -19,8 +19,13 @@
 </head>
 <body>
 
-<h2>JR西日本限定でランダム駅への最短経路を表示します！</h2>
+<h2>JR西日本限定でランダム駅への最短経路を表示します！旅行計画等にお使いください！</h2>
 
+<label>
+  最寄駅を選んでください（今は見つけにくいので順次修正予定です）：
+  <select id="startSelect"></select>
+</label>
+  
 <button id="searchBtn">検索する！</button>
 <div id="result">ボタンを押してください</div>
 <div id="map"></div>
@@ -94,8 +99,14 @@ function bfsShortestPath(adj, start, goal) {
     if (isNaN(lat) || isNaN(lon)) return;
 
     stationCdToG[station_cd] = g;
+    
+    // station_g_cd の代表駅（最初の1件だけ）
     if (!stationGInfo[g]) {
-      stationGInfo[g] = { name, lat, lon };
+      stationGInfo[g] = {
+        name: name,
+        lat: lat,
+        lon: lon
+      };
     }
   });
 
@@ -121,13 +132,28 @@ function bfsShortestPath(adj, start, goal) {
   });
 
   allG = Object.keys(adj);
+
+  //プルダウン選択
+  const startSelect = document.getElementById('startSelect');
+  
+  Object.entries(stationGInfo).forEach(([g, info]) => {
+    const option = document.createElement('option');
+    option.value = g;               // station_g_cd
+    option.textContent = info.name; // 駅名
+    startSelect.appendChild(option);
+  });
+  
+  // デフォルトを大阪に
+  startSelect.value = '1160214';
+  
   document.getElementById('result').textContent = '準備完了！ボタンを押してください';
 })();
 
 // ===== ボタン押下時 =====
 document.getElementById('searchBtn').addEventListener('click', async () => {
   const resultDiv = document.getElementById('result');
-  const startG = '1160308';
+  const startG = document.getElementById('startSelect').value;
+
 
   // 地図リセット
   mapLayers.forEach(l => map.removeLayer(l));
@@ -174,6 +200,10 @@ document.getElementById('searchBtn').addEventListener('click', async () => {
     `→ ゴール駅：${stationGInfo[goalG].name}駅\n\n` +
     path.map(g => '・' + stationGInfo[g].name + '駅').join('\n');
 });
+
+
+
+  
 </script>
 </body>
 </html>
