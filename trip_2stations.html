@@ -179,6 +179,22 @@ document.getElementById('searchBtn').addEventListener('click', async () => {
     `→ ゴール駅：${stationGInfo[goalG].name}駅\n\n` +
     path.map(g => '・' + stationGInfo[g].name + '駅').join('\n');
 });
+
+//プルダウン選択
+const startSelect = document.getElementById('startSelect');
+
+Object.entries(stationGInfo).forEach(([g, info]) => {
+  const option = document.createElement('option');
+  option.value = g;               // station_g_cd
+  option.textContent = info.name; // 駅名
+  startSelect.appendChild(option);
+});
+
+// // デフォルトを甲南山手に
+// startSelect.value = '1160308';
+
+
+  
 </script>
 </body>
 </html>
