@@ -52,7 +52,7 @@ const joinURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/ma
             if(!row) return;
             const cols = row.split(',').map(c=>c.trim());
             if(cols.length < 11) return;
-            const code = cols[0], name = cols[2];
+            const code = cols[1], name = cols[2];
             const lon = parseFloat(cols[9]), lat = parseFloat(cols[10]);
             const line_cd = cols[5];
             if(!code || !name || isNaN(lat) || isNaN(lon)) return;
