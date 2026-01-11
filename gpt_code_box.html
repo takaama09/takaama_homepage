@@ -234,39 +234,39 @@ companyTypeSelect.addEventListener('change', () => {
   });
 });
 
-// 会社タイプ投入
-COMPANY_TYPES.forEach(t => {
-  const opt = document.createElement('option');
-  opt.value = t.value;
-  opt.textContent = t.label;
-  companyTypeSelect.appendChild(opt);
-});
+// // 会社タイプ投入
+// COMPANY_TYPES.forEach(t => {
+//   const opt = document.createElement('option');
+//   opt.value = t.value;
+//   opt.textContent = t.label;
+//   companyTypeSelect.appendChild(opt);
+// });
 
 // 会社タイプ変更
-companyTypeSelect.addEventListener('change', () => {
-  companySelect.innerHTML = '<option value="">選択してください</option>';
-  lineSelect.innerHTML = '<option value="">選択してください</option>';
+// companyTypeSelect.addEventListener('change', () => {
+//   companySelect.innerHTML = '<option value="">選択してください</option>';
+//   lineSelect.innerHTML = '<option value="">選択してください</option>';
 
-  const companies = COMPANIES[companyTypeSelect.value] || [];
-  companies.forEach(c => {
-    const opt = document.createElement('option');
-    opt.value = c.value;
-    opt.textContent = c.label;
-    companySelect.appendChild(opt);
-  });
-});
+//   // const companies = COMPANIES[companyTypeSelect.value] || [];
+//   // companies.forEach(c => {
+//   //   const opt = document.createElement('option');
+//   //   opt.value = c.value;
+//   //   opt.textContent = c.label;
+//   //   companySelect.appendChild(opt);
+//   // });
+// });
 
 // 会社変更
 companySelect.addEventListener('change', () => {
   lineSelect.innerHTML = '<option value="">選択してください</option>';
 
-  const lines = LINES[companySelect.value] || [];
-  lines.forEach(l => {
-    const opt = document.createElement('option');
-    opt.value = l.value;
-    opt.textContent = l.label;
-    lineSelect.appendChild(opt);
-  });
+  // const lines = LINES[companySelect.value] || [];
+  // lines.forEach(l => {
+  //   const opt = document.createElement('option');
+  //   opt.value = l.value;
+  //   opt.textContent = l.label;
+  //   lineSelect.appendChild(opt);
+  // });
 });
 
 
