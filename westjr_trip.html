@@ -2,18 +2,24 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>JR西日本最短経路</title>
+<title>JR西日本限定で最短経路を調べます！</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
-  body { margin: 0; padding: 0; }
-  #map { width: 100vw; height: 100vh; }
+  body { margin: 0; padding: 0; font-family: sans-serif; }
+  #map { width: 100%; height: 70vh; }
+  #info { padding: 10px; height: 30vh; overflow-y: auto; background: #f0f0f0; }
+  #info h3 { margin: 5px 0; }
 </style>
 </head>
 <body>
 
 <div id="map"></div>
+<div id="info">
+  <h3>経路情報</h3>
+  <div id="routeText">読み込み中...</div>
+</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
@@ -46,14 +52,10 @@ async function loadData() {
 
 // データ処理
 function processData(stations, lines, joins) {
-  // JR西日本 line_cd のセット
   const jrLines = new Set(lines.filter(l => l.company_cd === jr_company_cd).map(l => l.line_cd));
-
-  // station_cd -> station_g_cd
   const station_cd_to_g = {};
   stations.forEach(s => { station_cd_to_g[s.station_cd] = s.station_g_cd; });
 
-  // station_g_cd -> name, lat, lon
   const station_g_to_info = {};
   stations.forEach(s => {
     if (!station_g_to_info[s.station_g_cd]) {
@@ -65,10 +67,9 @@ function processData(stations, lines, joins) {
     }
   });
 
-  // 隣接リスト作成（JR西日本のみ）
   const adj = {};
   joins.forEach(j => {
-    if (!jrLines.has(j.line_cd)) return; // JR西日本以外は無視
+    if (!jrLines.has(j.line_cd)) return;
     const st1 = station_cd_to_g[j.station_cd1];
     const st2 = station_cd_to_g[j.station_cd2];
     if (!st1 || !st2 || st1===st2) return;
@@ -78,9 +79,7 @@ function processData(stations, lines, joins) {
     adj[st2].add(st1);
   });
 
-  // Set を配列に変換
   for (let k in adj) adj[k] = Array.from(adj[k]);
-
   return {station_g_to_info, adj};
 }
 
@@ -101,7 +100,7 @@ function bfsShortestPath(adj, start, goal) {
 }
 
 // 地図描画
-function drawMap(station_g_to_info, adj, path) {
+function drawMap(station_g_to_info, adj, path, goal) {
   const map = L.map('map').setView([34.69, 135.20], 13);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19}).addTo(map);
 
@@ -113,26 +112,33 @@ function drawMap(station_g_to_info, adj, path) {
       .addTo(map);
   }
 
+  const infoDiv = document.getElementById('routeText');
+
   if (path) {
     const latlngs = path.map(g_cd => [station_g_to_info[g_cd].lat, station_g_to_info[g_cd].lon]);
     L.polyline(latlngs, {color:'red', weight:4}).addTo(map);
-    // 最初と最後の駅を色変更
     markers[path[0]].setStyle({color:'green', radius:7});
     markers[path[path.length-1]].setStyle({color:'blue', radius:7});
+
+    // 経路文字表示
+    const names = path.map(g => station_g_to_info[g].name);
+    infoDiv.innerHTML = `<strong>スタート:</strong> ${names[0]}<br>` +
+                        `<strong>ゴール:</strong> ${names[names.length-1]}<br>` +
+                        `<strong>経路:</strong> ${names.join(' → ')}`;
+  } else {
+    infoDiv.innerHTML = "経路が見つかりませんでした。";
   }
 }
 
-// メイン実行
+// 実行
 loadData().then(({stations, lines, joins}) => {
   const {station_g_to_info, adj} = processData(stations, lines, joins);
   const possibleTargets = Object.keys(adj).filter(g => g!==start_station_g_cd);
   const goal = possibleTargets[Math.floor(Math.random()*possibleTargets.length)];
   const path = bfsShortestPath(adj, start_station_g_cd, goal);
   console.log("最短経路：", path ? path.map(g=>station_g_to_info[g].name) : "なし");
-  drawMap(station_g_to_info, adj, path);
+  drawMap(station_g_to_info, adj, path, goal);
 });
-
 </script>
 </body>
 </html>
-
