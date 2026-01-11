@@ -445,18 +445,18 @@ document.getElementById('btnTokai16').addEventListener('click', () => {
 
   jrTokaiCompanies.forEach(cd => allowedCompanies.push(cd));
 
-  // // チェックボックスも連動
-  // const checkboxes = document.querySelectorAll('#companyCheckboxes input[type=checkbox]');
-  // checkboxes.forEach(cb => {
-  //   if (cb.dataset.companyType) {
-  //     cb.checked = allowedCompanies.includes(cb.value);
-  //   } else {
-  //     // 上位チェックボックス（タイプ）も連動
-  //     const type = cb.parentNode.textContent.trim().split(' ')[0]; // JR, 大手私鉄 など
-  //     cb.checked = Array.from(cb.parentNode.querySelectorAll('input[data-company-type]'))
-  //                      .some(c => allowedCompanies.includes(c.value));
-  //   }
-  // });
+  // チェックボックスも連動
+  const checkboxes = document.querySelectorAll('#companyCheckboxes input[type=checkbox]');
+  checkboxes.forEach(cb => {
+　  if (cb.dataset.companyType) {
+      cb.checked = allowedCompanies.includes(cb.value);
+    } else {
+      // 上位チェックボックス（タイプ）も連動
+      const type = cb.parentNode.textContent.trim().split(' ')[0]; // JR, 大手私鉄 など
+      cb.checked = Array.from(cb.parentNode.querySelectorAll('input[data-company-type]'))
+                       .some(c => allowedCompanies.includes(c.value));
+    }
+  });
 
   // プルダウンも更新
   refreshCompanyDropdown();
