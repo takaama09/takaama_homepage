@@ -288,11 +288,40 @@ function bfsShortestPath(adj, start, goal, allowedCompanies) {
 }
 
 
-  function updateAllowedCompanies() {
-    const checkboxes = document.querySelectorAll('#companyCheckboxes input[type=checkbox]');
-    allowedCompanies.length = 0;
-    checkboxes.forEach(cb => { if(cb.checked) allowedCompanies.push(cb.value); });
-  }
+// チェックボックス変更時に allowedCompanies 更新＆プルダウン更新
+function updateAllowedCompanies() {
+  const checkboxes = document.querySelectorAll('#companyCheckboxes input[type=checkbox]');
+  allowedCompanies.length = 0; // クリア
+
+  checkboxes.forEach(cb => {
+    if (cb.checked) allowedCompanies.push(cb.value);
+  });
+
+  // プルダウン更新
+  refreshCompanyDropdown();
+}
+
+// allowedCompanies に合わせて会社プルダウン更新
+function refreshCompanyDropdown() {
+  companySelect.innerHTML = '<option value="">選択してください</option>';
+  
+  const type = companyTypeSelect.value;
+  if (!type || !companiesByType[type]) return;
+
+  companiesByType[type]
+    .filter(c => allowedCompanies.includes(c.cd)) // チェックされている会社のみ
+    .forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.cd;
+      opt.textContent = c.name;
+      companySelect.appendChild(opt);
+    });
+
+  // 会社プルダウン変更で路線プルダウン更新
+  lineSelect.innerHTML = '<option value="">選択してください</option>';
+  startSelect.innerHTML = '<option value="">選択してください</option>';
+}
+
 
   generateCompanyCheckboxes();
 
