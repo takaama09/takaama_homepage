@@ -350,6 +350,10 @@ document.getElementById('searchBtn').addEventListener('click', async () => {
   const resultDiv = document.getElementById('result');
   const startG = document.getElementById('startSelect').value;
 
+if (!startG || !stationGInfo[startG]) {
+  resultDiv.textContent = '最寄駅を選択してください';
+  return;
+}
 
   // 地図リセット
   mapLayers.forEach(l => map.removeLayer(l));
