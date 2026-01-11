@@ -11,7 +11,7 @@
     display: flex;
     gap: 16px;
     align-items: center;
-    flex-wrap: wrap;   /* 画面狭い時は折り返す */
+    flex-wrap: wrap; /* 画面狭い時は折り返す */
     margin-bottom: 10px;
   }
   #filterRow select {
@@ -36,45 +36,44 @@
   <!-- ここに事業者区分ごとの会社チェックボックスが入る -->
 </div>
 
-  
 <div id="filterRow">
-<div style="margin-bottom:10px;">
-  <label>
-    事業者区分：
-    <select id="companyTypeSelect">
-      <option value="">選択してください</option>
-    </select>
-  </label>
+  <div style="margin-bottom:10px;">
+    <label>
+      事業者区分：
+      <select id="companyTypeSelect">
+        <option value="">選択してください</option>
+      </select>
+    </label>
+  </div>
+
+  <div style="margin-bottom:10px;">
+    <label>
+      会社：
+      <select id="companySelect">
+        <option value="">選択してください</option>
+      </select>
+    </label>
+  </div>
+
+  <div style="margin-bottom:10px;">
+    <label>
+      路線：
+      <select id="lineSelect">
+        <option value="">選択してください</option>
+      </select>
+    </label>
+  </div>
+
+  <div style="margin-bottom:10px;">
+    <label>
+      最寄駅：
+      <select id="startSelect">
+        <option value="">選択してください</option>
+      </select>
+    </label>
+  </div>
 </div>
 
-<div style="margin-bottom:10px;">
-  <label>
-    会社：
-    <select id="companySelect">
-      <option value="">選択してください</option>
-    </select>
-  </label>
-</div>
-
-<div style="margin-bottom:10px;">
-  <label>
-    路線：
-    <select id="lineSelect">
-      <option value="">選択してください</option>
-    </select>
-  </label>
-</div>
-
-<div style="margin-bottom:10px;">
-<label>
-  最寄駅：
-  <select id="startSelect">
-    <option value="">選択してください</option>
-  </select>
-</label>
-</div>
-</div>
-  
 <button id="searchBtn">検索する！</button>
 <div id="result">ボタンを押してください</div>
 <div id="map"></div>
@@ -91,11 +90,9 @@ let adj = {};
 let stationGInfo = {};
 let allG = [];
 let mapLayers = [];
-let companiesByType = {}; 
+let companiesByType = {};
 let linesByCompany = {};
 let stationsByLine = {};
-let allowedCompanies = [];
-
 
 // CSV URL
 const lineURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station/line.csv';
@@ -103,10 +100,8 @@ const stationURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage
 const joinURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station/join.csv';
 const companyURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/main/station/company.csv';
 
-
-//あとで色々変える
-//const allowedCompanies = ['4']; // JR西日本だけ
-//const path = bfsShortestPath(adj, startG, goalG, allowedCompanies);
+// JR西日本だけ
+const allowedCompanies = ['4'];
 
 // BFS
 function bfsShortestPath(adj, start, goal, allowedCompanies) {
@@ -121,7 +116,7 @@ function bfsShortestPath(adj, start, goal, allowedCompanies) {
     if (!visited.has(node)) {
       visited.add(node);
       for (const edge of adj[node] || []) {
-        if (!allowedCompanies.includes(edge.company)) continue; // ← 会社制限
+        if (!allowedCompanies.includes(edge.company)) continue; // 会社制限
         queue.push([...path, edge.to]);
       }
     }
@@ -129,7 +124,7 @@ function bfsShortestPath(adj, start, goal, allowedCompanies) {
   return null;
 }
 
-// ===== 初期化（CSV読み込みは一度だけ）=====
+// ===== 初期化（CSV読み込み） =====
 (async () => {
   const [companyText, lineText, stationText, joinText] = await Promise.all([
     fetch(companyURL).then(r => r.text()),
@@ -138,137 +133,84 @@ function bfsShortestPath(adj, start, goal, allowedCompanies) {
     fetch(joinURL).then(r => r.text())
   ]);
 
-    companyText.replace(/\r/g,'').split('\n').slice(1).forEach(r => {
+  companyText.replace(/\r/g,'').split('\n').slice(1).forEach(r => {
     const c = r.split(',');
     if (c.length < 10) return;
-
     const company_cd = c[0];
     const company_name = c[2];
     const company_type = c[7];
-      
-    if (!companiesByType[company_type]) {
-      companiesByType[company_type] = [];
-    }
-    companiesByType[company_type].push({
-      cd: company_cd,
-      name: company_name
-    });
+    if (!companiesByType[company_type]) companiesByType[company_type] = [];
+    companiesByType[company_type].push({ cd: company_cd, name: company_name });
   });
 
-
-  //const jrLines = new Set();
   lineText.replace(/\r/g,'').split('\n').slice(1).forEach(r => {
     const c = r.split(',');
-    //if (c[1] === '4') jrLines.add(c[0]);　//この辺あとで修正？
-
     if (c.length < 10) return;
-
     const line_cd = c[0];
     const company_cd = c[1];
     const line_name = c[2];
-
-
-  if (!linesByCompany[company_cd]) {
-    linesByCompany[company_cd] = [];
-  }
-
-  linesByCompany[company_cd].push({
-    cd: line_cd,
-    name: line_name
+    if (!linesByCompany[company_cd]) linesByCompany[company_cd] = [];
+    linesByCompany[company_cd].push({ cd: line_cd, name: line_name });
   });
-});
-
 
   const stationCdToG = {};
   stationText.replace(/\r/g,'').split('\n').slice(1).forEach(r => {
     const c = r.split(',');
     if (c.length < 11) return;
-
     const station_cd = c[0];
     const g = c[1];
     const name = c[2];
     const line_cd = c[5];
     const lon = parseFloat(c[9]);
     const lat = parseFloat(c[10]);
-
     if (isNaN(lat) || isNaN(lon)) return;
 
-    if (!stationsByLine[line_cd]) {
-    stationsByLine[line_cd] = [];
-  }
-  
-  stationsByLine[line_cd].push({
-    g: g,
-    name: name,
-    lat: lat,
-    lon: lon
-  });
-
-
+    if (!stationsByLine[line_cd]) stationsByLine[line_cd] = [];
+    stationsByLine[line_cd].push({ g, name, lat, lon });
     stationCdToG[station_cd] = g;
-    
-    // station_g_cd の代表駅（最初の1件だけ）
+
     if (!stationGInfo[g]) {
-       stationGInfo[g] = {
-         name: name,
-         lat: lat,
-         lon: lon
-       };
-     }
+      stationGInfo[g] = { name, lat, lon };
+    }
   });
 
-// まず line_cd → company_cd マップ作成
-const lineToCompany = {};
-lineText.replace(/\r/g,'').split('\n').slice(1).forEach(r => {
-  const c = r.split(',');
-  if (c.length < 2) return;
-  const line_cd = c[0];
-  const company_cd = c[1];
-  lineToCompany[line_cd] = company_cd;
-});
+  // line_cd → company_cd マップ
+  const lineToCompany = {};
+  lineText.replace(/\r/g,'').split('\n').slice(1).forEach(r => {
+    const c = r.split(',');
+    if (c.length < 2) return;
+    lineToCompany[c[0]] = c[1];
+  });
 
-// join 読み込み
-joinText.replace(/\r/g,'').split('\n').slice(1).forEach(r => {
-  const c = r.split(',');
-  if (c.length < 3) return;
+  // join 読み込み
+  joinText.replace(/\r/g,'').split('\n').slice(1).forEach(r => {
+    const c = r.split(',');
+    if (c.length < 3) return;
+    const [line_cd, s1, s2] = c;
+    if (!(s1 in stationCdToG) || !(s2 in stationCdToG)) return;
 
-  const line_cd = c[0];
-  const s1 = c[1];
-  const s2 = c[2];
+    const g1 = stationCdToG[s1];
+    const g2 = stationCdToG[s2];
+    if (g1 === g2) return;
 
-  if (!(s1 in stationCdToG) || !(s2 in stationCdToG)) return;
+    const company_cd = lineToCompany[line_cd];
+    if (!company_cd) return;
 
-  const g1 = stationCdToG[s1];
-  const g2 = stationCdToG[s2];
-  if (g1 === g2) return;
-
-  const company_cd = lineToCompany[line_cd];
-  if (!company_cd) return;
-
-  adj[g1] = adj[g1] || [];
-  adj[g2] = adj[g2] || [];
-
-  adj[g1].push({ to: g2, company: company_cd });
-  adj[g2].push({ to: g1, company: company_cd });
-});
-
+    adj[g1] = adj[g1] || [];
+    adj[g2] = adj[g2] || [];
+    adj[g1].push({ to: g2, company: company_cd });
+    adj[g2].push({ to: g1, company: company_cd });
+  });
 
   allG = Object.keys(adj);
 
-//ここからチェックボックス
-// 会社チェックボックス生成（階層対応）
-function generateCompanyCheckboxes() {
+  // ===== チェックボックス生成 =====
+ function generateCompanyCheckboxes() {
   const container = document.getElementById('companyCheckboxes');
   container.innerHTML = '';
 
-  const companyTypeLabel = {
-    '1': 'JR',
-    '2': '大手私鉄',
-    '3': '準大手私鉄',
-    '0': 'その他',
-  };
-
-  const companyTypeOrder = ['1', '2', '3', '0'];
+  const companyTypeLabel = { '1':'JR', '2':'大手私鉄', '3':'準大手私鉄', '0':'その他' };
+  const companyTypeOrder = ['1','2','3','0'];
 
   companyTypeOrder.forEach(type => {
     if (!companiesByType[type]) return;
@@ -276,31 +218,52 @@ function generateCompanyCheckboxes() {
     const typeDiv = document.createElement('div');
     typeDiv.style.marginBottom = '8px';
 
-    // 上位階層チェックボックス
+    // 折りたたみ用ボタン
+    const toggleBtn = document.createElement('span');
+    toggleBtn.textContent = '▶'; // 初期は閉じた状態
+    toggleBtn.style.cursor = 'pointer';
+    toggleBtn.style.marginRight = '4px';
+    toggleBtn.style.userSelect = 'none';
+
+    // 上位チェックボックス（事業者区分）
     const typeLabel = document.createElement('label');
-    typeLabel.style.display = 'block';
+    typeLabel.style.display = 'inline-block';
     typeLabel.style.cursor = 'pointer';
-    typeLabel.style.fontWeight = 'bold';
 
     const typeCheckbox = document.createElement('input');
     typeCheckbox.type = 'checkbox';
     typeCheckbox.checked = companiesByType[type].every(c => allowedCompanies.includes(c.cd));
-    
-    // 上位チェック変更時の動作
+
     typeCheckbox.addEventListener('change', () => {
-      const checked = typeCheckbox.checked;
-      // 下位すべてチェック or 外す
-      typeDiv.querySelectorAll('input[type=checkbox].company-checkbox').forEach(cb => {
-        cb.checked = checked;
+      const childCheckboxes = typeDiv.querySelectorAll('input[data-company-type="'+type+'"]');
+      childCheckboxes.forEach(cb => {
+        cb.checked = typeCheckbox.checked;
       });
       updateAllowedCompanies();
     });
 
     typeLabel.appendChild(typeCheckbox);
     typeLabel.appendChild(document.createTextNode(' ' + (companyTypeLabel[type] || type)));
+
+    // トグルで下位会社を折りたたむ
+    const childDiv = document.createElement('div');
+    childDiv.style.marginLeft = '16px';
+    childDiv.style.display = 'none'; // 初期は閉じておく
+
+    toggleBtn.addEventListener('click', () => {
+      if (childDiv.style.display === 'none') {
+        childDiv.style.display = 'block';
+        toggleBtn.textContent = '▼'; // 開いた状態
+      } else {
+        childDiv.style.display = 'none';
+        toggleBtn.textContent = '▶'; // 閉じた状態
+      }
+    });
+
+    typeDiv.appendChild(toggleBtn);
     typeDiv.appendChild(typeLabel);
 
-    // 下位会社チェックボックス
+    // 子会社チェックボックス
     companiesByType[type].forEach(c => {
       const label = document.createElement('label');
       label.style.display = 'block';
@@ -310,259 +273,138 @@ function generateCompanyCheckboxes() {
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.value = c.cd;
-      checkbox.classList.add('company-checkbox'); // 下位用クラス
       checkbox.checked = allowedCompanies.includes(c.cd);
-
-      // 下位変更時に上位も自動チェック/解除
-      checkbox.addEventListener('change', () => {
-        const allChecked = Array.from(typeDiv.querySelectorAll('input.company-checkbox'))
-          .every(cb => cb.checked);
-        typeCheckbox.checked = allChecked;
-        updateAllowedCompanies();
-      });
+      checkbox.dataset.companyType = type;
+      checkbox.addEventListener('change', updateAllowedCompanies);
 
       label.appendChild(checkbox);
       label.appendChild(document.createTextNode(' ' + c.name));
-      typeDiv.appendChild(label);
+      childDiv.appendChild(label);
     });
 
+    typeDiv.appendChild(childDiv);
     container.appendChild(typeDiv);
   });
 }
 
-// プルダウン更新
-function refreshDropdowns() {
-  const type = companyTypeSelect.value;
-  if (!type) return;
 
-  companySelect.innerHTML = '<option value="">選択してください</option>';
-  lineSelect.innerHTML = '<option value="">選択してください</option>';
+  function updateAllowedCompanies() {
+    const checkboxes = document.querySelectorAll('#companyCheckboxes input[type=checkbox]');
+    allowedCompanies.length = 0;
+    checkboxes.forEach(cb => { if(cb.checked) allowedCompanies.push(cb.value); });
+  }
 
-  companiesByType[type]
-    .filter(c => allowedCompanies.includes(c.cd))
-    .forEach(c => {
+  generateCompanyCheckboxes();
+
+  // ===== プルダウン連動 =====
+  const companyTypeSelect = document.getElementById('companyTypeSelect');
+  const companySelect = document.getElementById('companySelect');
+  const lineSelect = document.getElementById('lineSelect');
+  const startSelect = document.getElementById('startSelect');
+
+  const companyTypeLabel = { '1':'JR', '2':'大手私鉄', '3':'準大手私鉄', '0':'その他' };
+  const companyTypeOrder = ['1','2','3','0'];
+  companyTypeOrder.forEach(type => {
+    if (!companiesByType[type]) return;
+    const opt = document.createElement('option');
+    opt.value = type;
+    opt.textContent = companyTypeLabel[type] || type;
+    companyTypeSelect.appendChild(opt);
+  });
+
+  companyTypeSelect.addEventListener('change', () => {
+    companySelect.innerHTML = '<option value="">選択してください</option>';
+    lineSelect.innerHTML = '<option value="">選択してください</option>';
+    const type = companyTypeSelect.value;
+    if (!type || !companiesByType[type]) return;
+    companiesByType[type].forEach(c => {
       const opt = document.createElement('option');
       opt.value = c.cd;
       opt.textContent = c.name;
       companySelect.appendChild(opt);
     });
-}
-
-// チェックボックス変更時に allowedCompanies 更新
-function updateAllowedCompanies() {
-  const checkboxes = document.querySelectorAll('#companyCheckboxes input[type=checkbox]');
-  allowedCompanies.length = 0; // クリア
-  checkboxes.forEach(cb => {
-    if (cb.checked) allowedCompanies.push(cb.value);
-  });
-refreshDropdowns(); 
-}
-
-// 初回生成
-generateCompanyCheckboxes();
-updateAllowedCompanies();
-
-
-
-// チェックボックス変更時
-function updateAllowedCompanies() {
-  const checkboxes = document.querySelectorAll('#companyCheckboxes input[type=checkbox]');
-  allowedCompanies.length = 0; // クリア
-  checkboxes.forEach(cb => {
-    if (cb.checked) allowedCompanies.push(cb.value);
   });
 
-  refreshDropdowns(); // ← プルダウンも更新
-}
-
-
-
-  //拡張プルダウン
-const companyTypeSelect = document.getElementById('companyTypeSelect');
-const companySelect = document.getElementById('companySelect');
-const lineSelect = document.getElementById('lineSelect');
-const startSelect = document.getElementById('startSelect');
-
-
-// 表示用ラベル
-const companyTypeLabel = {
-  '1': 'JR',
-  '2': '大手私鉄',
-  '3': '準大手私鉄',
-  '0': 'その他',
-};
-
-// company_type を入れる
-// Object.keys(companiesByType).forEach(type => {
-//   const opt = document.createElement('option');
-//   opt.value = type;
-//   opt.textContent = companyTypeLabel[type] || type;
-//   companyTypeSelect.appendChild(opt);
-// });
-const companyTypeOrder = ['1', '2', '3', '0'];
-
-companyTypeOrder.forEach(type => {
-  if (!companiesByType[type]) return;
-  const opt = document.createElement('option');
-  opt.value = type;
-  opt.textContent = companyTypeLabel[type] || type;
-  companyTypeSelect.appendChild(opt);
-});
-
-
-companyTypeSelect.addEventListener('change', () => {
-  companySelect.innerHTML = '<option value="">選択してください</option>';
-  lineSelect.innerHTML = '<option value="">選択してください</option>';
-
-  const type = companyTypeSelect.value;
-  if (!type || !companiesByType[type]) return;
-
-  companiesByType[type]
-    .filter(c => allowedCompanies.includes(c.cd)) 
-    .forEach(c => {
-    const opt = document.createElement('option');
-    opt.value = c.cd;
-    opt.textContent = c.name;
-    companySelect.appendChild(opt);
-  });
-});
-
-// // 会社タイプ投入
-// COMPANY_TYPES.forEach(t => {
-//   const opt = document.createElement('option');
-//   opt.value = t.value;
-//   opt.textContent = t.label;
-//   companyTypeSelect.appendChild(opt);
-// });
-
-// 会社タイプ変更
-// companyTypeSelect.addEventListener('change', () => {
-//   companySelect.innerHTML = '<option value="">選択してください</option>';
-//   lineSelect.innerHTML = '<option value="">選択してください</option>';
-
-//   // const companies = COMPANIES[companyTypeSelect.value] || [];
-//   // companies.forEach(c => {
-//   //   const opt = document.createElement('option');
-//   //   opt.value = c.value;
-//   //   opt.textContent = c.label;
-//   //   companySelect.appendChild(opt);
-//   // });
-// });
-
-// 会社変更
-companySelect.addEventListener('change', () => {
-  lineSelect.innerHTML = '<option value="">選択してください</option>';
-
-  const companyCd = companySelect.value;
-  if (!companyCd || !linesByCompany[companyCd]) return;
-
-  linesByCompany[companyCd].forEach(l => {
-    const opt = document.createElement('option');
-    opt.value = l.cd;
-    opt.textContent = l.name;
-    lineSelect.appendChild(opt);
-  });
-});
-
-lineSelect.addEventListener('change', () => {
-  startSelect.innerHTML = '<option value="">選択してください</option>';
-
-  const lineCd = lineSelect.value;
-  if (!lineCd || !stationsByLine[lineCd]) return;
-
-  stationsByLine[lineCd]
-    .sort((a, b) => a.name.localeCompare(b.name, 'ja'))
-    .forEach(s => {
+  companySelect.addEventListener('change', () => {
+    lineSelect.innerHTML = '<option value="">選択してください</option>';
+    const companyCd = companySelect.value;
+    if (!companyCd || !linesByCompany[companyCd]) return;
+    linesByCompany[companyCd].forEach(l => {
       const opt = document.createElement('option');
-      opt.value = s.g;        // station_g_cd
+      opt.value = l.cd;
+      opt.textContent = l.name;
+      lineSelect.appendChild(opt);
+    });
+  });
+
+  lineSelect.addEventListener('change', () => {
+    startSelect.innerHTML = '<option value="">選択してください</option>';
+    const lineCd = lineSelect.value;
+    if (!lineCd || !stationsByLine[lineCd]) return;
+    stationsByLine[lineCd].sort((a,b)=>a.name.localeCompare(b.name,'ja')).forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.g;
       opt.textContent = s.name;
       startSelect.appendChild(opt);
     });
-});
+  });
 
-
-  // //プルダウン選択
-  // const startSelect = document.getElementById('startSelect');
-  
-  // Object.entries(stationGInfo).forEach(([g, info]) => {
-  //   const option = document.createElement('option');
-  //   option.value = g;               // station_g_cd
-  //   option.textContent = info.name; // 駅名
-  //   startSelect.appendChild(option);
-  // });
-  
-
-  
   document.getElementById('result').textContent = '準備完了！ボタンを押してください';
 })();
 
 // ===== ボタン押下時 =====
 document.getElementById('searchBtn').addEventListener('click', async () => {
   const resultDiv = document.getElementById('result');
-  const startG = document.getElementById('startSelect').value;
+  const startG = startSelect.value;
 
-if (!startG || !stationGInfo[startG]) {
-  resultDiv.textContent = '最寄駅を選択してください';
-  return;
-}
+  if(!startG || !stationGInfo[startG]) {
+    resultDiv.textContent = '最寄駅を選択してください';
+    return;
+  }
 
-  // 地図リセット
-  mapLayers.forEach(l => map.removeLayer(l));
+  mapLayers.forEach(l=>map.removeLayer(l));
   mapLayers = [];
 
-  // allowedCompanies 内で到達可能な駅だけゴール候補にする
   const candidateGoals = allG.filter(g => {
-    // g の駅が allowedCompanies 内の線に存在するかどうか
     const edges = adj[g] || [];
     return edges.some(edge => allowedCompanies.includes(edge.company));
   });
-  
-  const goalG = candidateGoals[Math.floor(Math.random() * candidateGoals.length)];
-  
-  resultDiv.textContent =
-    `最寄駅：${stationGInfo[startG].name}駅\n` +
-    `→ ゴール駅：${stationGInfo[goalG].name}駅\n\n計算中...`;
 
-  await new Promise(r => setTimeout(r, 50));
+  const goalG = candidateGoals[Math.floor(Math.random()*candidateGoals.length)];
 
-  const path = bfsShortestPath(adj, startG, goalG, allowedCompanies);
-  if (!path) {
+  resultDiv.textContent = `最寄駅：${stationGInfo[startG].name}駅\n→ ゴール駅：${stationGInfo[goalG].name}駅\n\n計算中...`;
+
+  await new Promise(r=>setTimeout(r,50));
+
+  const path = bfsShortestPath(adj,startG,goalG,allowedCompanies);
+  if(!path) {
     resultDiv.textContent += '\n経路が見つかりませんでした';
     return;
   }
 
   const latlngs = [];
-  path.forEach((g, i) => {
+  path.forEach((g,i)=>{
     const info = stationGInfo[g];
     const ll = [info.lat, info.lon];
     latlngs.push(ll);
 
-    const marker = L.circleMarker(ll, {
-      radius: i === 0 || i === path.length - 1 ? 10 : 5,
-      color: i === 0 ? 'red' : i === path.length - 1 ? 'red' : '#333',
+    const marker = L.circleMarker(ll,{
+      radius: i===0||i===path.length-1?10:5,
+      color: i===0?'red':i===path.length-1?'red':'#333',
       fillOpacity: 1
     }).addTo(map).bindPopup(info.name);
 
     mapLayers.push(marker);
   });
 
-  const line = L.polyline(latlngs, {
-    color: 'orange',
-    weight: 5
-  }).addTo(map);
-
+  const line = L.polyline(latlngs,{ color:'orange', weight:5 }).addTo(map);
   mapLayers.push(line);
   map.fitBounds(line.getBounds());
 
-  resultDiv.textContent =
-    `最寄駅：${stationGInfo[startG].name}駅\n` +
-    `→ ゴール駅：${stationGInfo[goalG].name}駅\n\n` +
-    path.map(g => '・' + stationGInfo[g].name + '駅').join('\n');
+  resultDiv.textContent = 
+    `最寄駅：${stationGInfo[startG].name}駅\n→ ゴール駅：${stationGInfo[goalG].name}駅\n\n` +
+    path.map(g=>'・'+stationGInfo[g].name+'駅').join('\n');
 });
-
-
-
-  
 </script>
 </body>
 </html>
