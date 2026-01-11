@@ -59,7 +59,7 @@ const joinURL = 'https://raw.githubusercontent.com/takaama09/takaama_homepage/re
             if (!lineCompanyMap[line_cd]) return;
             const company_cd = lineCompanyMap[line_cd];
             if (company_cd < 1 || company_cd > 6) return;
-            if (e_status !== '0') return;      // 運用中のみ
+            if (e_status !== 0) return;      // 運用中のみ
 
 
             stationsMap[code] = {name, lat, lon};
