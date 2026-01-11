@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>JR西日本限定で最短経路を調べます！</title>
+<title>JR西日本最短経路</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -43,23 +43,29 @@ async function loadData() {
     stationResp.text(), lineResp.text(), joinResp.text()
   ]);
 
-  const stations = Papa.parse(stationText, {header:true, skipEmptyLines:true}).data;
-  const lines = Papa.parse(lineText, {header:true, skipEmptyLines:true}).data;
-  const joins = Papa.parse(joinText, {header:true, skipEmptyLines:true}).data;
+  // dynamicTyping:false で文字列として扱う
+  const stations = Papa.parse(stationText, {header:true, skipEmptyLines:true, dynamicTyping:false}).data;
+  const lines = Papa.parse(lineText, {header:true, skipEmptyLines:true, dynamicTyping:false}).data;
+  const joins = Papa.parse(joinText, {header:true, skipEmptyLines:true, dynamicTyping:false}).data;
 
   return {stations, lines, joins};
 }
 
 // データ処理
 function processData(stations, lines, joins) {
+  // JR西日本 line_cd のセット
   const jrLines = new Set(lines.filter(l => l.company_cd === jr_company_cd).map(l => l.line_cd));
-  const station_cd_to_g = {};
-  stations.forEach(s => { station_cd_to_g[s.station_cd] = s.station_g_cd; });
 
+  // station_cd -> station_g_cd
+  const station_cd_to_g = {};
+  stations.forEach(s => { station_cd_to_g[String(s.station_cd)] = String(s.station_g_cd); });
+
+  // station_g_cd -> info
   const station_g_to_info = {};
   stations.forEach(s => {
-    if (!station_g_to_info[s.station_g_cd]) {
-      station_g_to_info[s.station_g_cd] = {
+    const g_cd = String(s.station_g_cd);
+    if (!station_g_to_info[g_cd]) {
+      station_g_to_info[g_cd] = {
         name: s.station_name,
         lat: parseFloat(s.lat),
         lon: parseFloat(s.lon)
@@ -67,23 +73,26 @@ function processData(stations, lines, joins) {
     }
   });
 
+  // 隣接リスト作成
   const adj = {};
   joins.forEach(j => {
     if (!jrLines.has(j.line_cd)) return;
-    const st1 = station_cd_to_g[j.station_cd1];
-    const st2 = station_cd_to_g[j.station_cd2];
-    if (!st1 || !st2 || st1===st2) return;
+    const st1 = station_cd_to_g[String(j.station_cd1)];
+    const st2 = station_cd_to_g[String(j.station_cd2)];
+    if (!st1 || !st2 || st1 === st2) return;
     adj[st1] = adj[st1] || new Set();
     adj[st2] = adj[st2] || new Set();
     adj[st1].add(st2);
     adj[st2].add(st1);
   });
 
+  // Set を配列に変換
   for (let k in adj) adj[k] = Array.from(adj[k]);
+
   return {station_g_to_info, adj};
 }
 
-// BFSで最短経路
+// BFS 最短経路
 function bfsShortestPath(adj, start, goal) {
   const visited = new Set();
   const queue = [[start]];
@@ -93,14 +102,14 @@ function bfsShortestPath(adj, start, goal) {
     if (node === goal) return path;
     if (!visited.has(node)) {
       visited.add(node);
-      (adj[node]||[]).forEach(n => queue.push([...path,n]));
+      (adj[node]||[]).forEach(n => queue.push([...path, n]));
     }
   }
   return null;
 }
 
 // 地図描画
-function drawMap(station_g_to_info, adj, path, goal) {
+function drawMap(station_g_to_info, adj, path) {
   const map = L.map('map').setView([34.69, 135.20], 13);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19}).addTo(map);
 
@@ -117,10 +126,10 @@ function drawMap(station_g_to_info, adj, path, goal) {
   if (path) {
     const latlngs = path.map(g_cd => [station_g_to_info[g_cd].lat, station_g_to_info[g_cd].lon]);
     L.polyline(latlngs, {color:'red', weight:4}).addTo(map);
+
     markers[path[0]].setStyle({color:'green', radius:7});
     markers[path[path.length-1]].setStyle({color:'blue', radius:7});
 
-    // 経路文字表示
     const names = path.map(g => station_g_to_info[g].name);
     infoDiv.innerHTML = `<strong>スタート:</strong> ${names[0]}<br>` +
                         `<strong>ゴール:</strong> ${names[names.length-1]}<br>` +
@@ -137,7 +146,7 @@ loadData().then(({stations, lines, joins}) => {
   const goal = possibleTargets[Math.floor(Math.random()*possibleTargets.length)];
   const path = bfsShortestPath(adj, start_station_g_cd, goal);
   console.log("最短経路：", path ? path.map(g=>station_g_to_info[g].name) : "なし");
-  drawMap(station_g_to_info, adj, path, goal);
+  drawMap(station_g_to_info, adj, path);
 });
 </script>
 </body>
