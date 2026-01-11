@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>準備中...</title>
+<title>準備中</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <style>
@@ -31,6 +31,11 @@
 <body>
 
 <h2>最強の鉄道旅行計画を立てよう！</h2>
+
+<div id="companyCheckboxes">
+  <!-- ここに事業者区分ごとの会社チェックボックスが入る -->
+</div>
+
   
 <div id="filterRow">
 <div style="margin-bottom:10px;">
@@ -247,6 +252,66 @@ joinText.replace(/\r/g,'').split('\n').slice(1).forEach(r => {
 
 
   allG = Object.keys(adj);
+
+//ここからチェックボックス
+// 会社チェックボックス生成
+function generateCompanyCheckboxes() {
+  const container = document.getElementById('companyCheckboxes');
+  container.innerHTML = '';
+
+  const companyTypeLabel = {
+    '1': 'JR',
+    '2': '大手私鉄',
+    '3': '準大手私鉄',
+    '0': 'その他',
+  };
+
+  const companyTypeOrder = ['1', '2', '3', '0'];
+
+  companyTypeOrder.forEach(type => {
+    if (!companiesByType[type]) return;
+
+    // 事業者区分の見出し
+    const typeDiv = document.createElement('div');
+    typeDiv.style.marginBottom = '8px';
+    const typeTitle = document.createElement('strong');
+    typeTitle.textContent = companyTypeLabel[type] || type;
+    typeDiv.appendChild(typeTitle);
+
+    // 会社ごとのチェックボックス
+    companiesByType[type].forEach(c => {
+      const label = document.createElement('label');
+      label.style.display = 'block';
+      label.style.marginLeft = '16px';
+      label.style.cursor = 'pointer';
+
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.value = c.cd;  // company_cd
+      checkbox.checked = allowedCompanies.includes(c.cd); // 初期値
+      checkbox.addEventListener('change', updateAllowedCompanies);
+
+      label.appendChild(checkbox);
+      label.appendChild(document.createTextNode(' ' + c.name));
+      typeDiv.appendChild(label);
+    });
+
+    container.appendChild(typeDiv);
+  });
+}
+
+// チェックボックス変更時に allowedCompanies 更新
+function updateAllowedCompanies() {
+  const checkboxes = document.querySelectorAll('#companyCheckboxes input[type=checkbox]');
+  allowedCompanies.length = 0; // クリア
+  checkboxes.forEach(cb => {
+    if (cb.checked) allowedCompanies.push(cb.value);
+  });
+}
+
+// 初回生成
+generateCompanyCheckboxes();
+
 
 
   //拡張プルダウン
