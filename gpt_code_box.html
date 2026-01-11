@@ -627,7 +627,9 @@ document.getElementById('searchBtn').addEventListener('click', async () => {
 
   resultDiv.textContent = 
     `最寄駅：${stationGInfo[startG].name}駅\n→ ゴール駅：${stationGInfo[goalG].name}駅\n\n` +
-    path.map(g=>'・'+stationGInfo[g].name+'駅').join('\n');
+    //path.map(g=>'・'+stationGInfo[g].name+'駅').join('\n'); //縦に書くパターン
+  path.map(g => stationGInfo[g].name + '駅').join(' → ');
+
 });
 </script>
 </body>
