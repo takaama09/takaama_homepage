@@ -603,6 +603,17 @@ companyTypeSelect.addEventListener('change', () => {
   //document.getElementById('result').textContent = '準備完了！ボタンを押してください';
 })();
 
+// ===== 距離スライダー =====
+const distanceRange = document.getElementById('distanceRange');
+const distanceLabel = document.getElementById('distanceLabel');
+
+distanceLabel.textContent = distanceRange.value;
+
+distanceRange.addEventListener('input', () => {
+  distanceLabel.textContent = distanceRange.value;
+});
+
+
 //距離を計算する関数
 function calcDistanceKm(lat1, lon1, lat2, lon2) {
   const R = 6371; // 地球半径 km
