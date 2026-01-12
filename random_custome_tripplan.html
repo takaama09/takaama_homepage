@@ -710,6 +710,19 @@ if (dist < minDist || dist > maxDist) return false;
   return edges.some(edge => allowedCompanies.includes(edge.company));
 });
 
+if (candidateGoals.length === 0) {
+  resultDiv.innerHTML =
+    `<span style="color:#d33; font-weight:bold; font-size:18px;">
+      条件に合う駅がありませんでした。
+     </span><br><br>` +
+    `・距離条件：${minDist}〜${maxDist} km<br>` +
+    `・選択中のきっぷでは到達不可の可能性があります<br><br>` +
+    `距離を広げるか、きっぷ条件を変えてみてください。`;
+  return;
+}
+
+
+
 
   const goalG = candidateGoals[Math.floor(Math.random()*candidateGoals.length)];
 
