@@ -115,6 +115,14 @@
   </div>
 </div>
 
+<div style="margin-bottom:12px;">
+  <button class="preset" data-min="0" data-max="100">日帰り</button>
+  <button class="preset" data-min="100" data-max="350">1泊2日</button>
+  <button class="preset" data-min="350" data-max="600">2泊3日</button>
+  <button class="preset" data-min="600" data-max="2000">修行</button>
+</div>
+
+
 <div style="margin-bottom:10px;">
   <label>
     最小距離：
@@ -632,6 +640,15 @@ minRange.addEventListener('input', syncDistanceLabel);
 maxRange.addEventListener('input', syncDistanceLabel);
 
 syncDistanceLabel();
+
+  document.querySelectorAll('.preset').forEach(btn => {
+  btn.addEventListener('click', () => {
+    minRange.value = btn.dataset.min;
+    maxRange.value = btn.dataset.max;
+    syncDistanceLabel();
+  });
+});
+
 
 
 
