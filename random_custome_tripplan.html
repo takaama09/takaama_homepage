@@ -603,6 +603,25 @@ companyTypeSelect.addEventListener('change', () => {
   //document.getElementById('result').textContent = '準備完了！ボタンを押してください';
 })();
 
+//距離を計算する関数
+function calcDistanceKm(lat1, lon1, lat2, lon2) {
+  const R = 6371; // 地球半径 km
+  const toRad = deg => deg * Math.PI / 180;
+
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) *
+    Math.cos(toRad(lat2)) *
+    Math.sin(dLon / 2) ** 2;
+
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+
+
 // ===== ボタン押下時 =====
 document.getElementById('searchBtn').addEventListener('click', async () => {
   const resultDiv = document.getElementById('result');
@@ -616,10 +635,27 @@ document.getElementById('searchBtn').addEventListener('click', async () => {
   mapLayers.forEach(l=>map.removeLayer(l));
   mapLayers = [];
 
-  const candidateGoals = allG.filter(g => {
-    const edges = adj[g] || [];
-    return edges.some(edge => allowedCompanies.includes(edge.company));
-  });
+const maxDistance = Number(distanceRange.value);
+const startInfo = stationGInfo[startG];
+
+//目的地を探す
+const candidateGoals = allG.filter(g => {
+  if (g === startG) return false;
+
+  const info = stationGInfo[g];
+  if (!info) return false;
+
+  const dist = calcDistanceKm(
+    startInfo.lat, startInfo.lon,
+    info.lat, info.lon
+  );
+
+  if (dist > maxDistance) return false;
+
+  const edges = adj[g] || [];
+  return edges.some(edge => allowedCompanies.includes(edge.company));
+});
+
 
   const goalG = candidateGoals[Math.floor(Math.random()*candidateGoals.length)];
 
