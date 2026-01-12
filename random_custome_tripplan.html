@@ -117,12 +117,22 @@
 
 <div style="margin-bottom:10px;">
   <label>
-    目的地までの距離を選んでください：
-    <span id="distanceLabel">200</span> km
+    最小距離：
+    <span id="minLabel">50</span> km
     <br>
-    <input type="range" id="distanceRange" min="10" max="1000" step="10" value="200">
+    <input type="range" id="minRange" min="0" max="1000" step="10" value="50">
   </label>
 </div>
+
+<div style="margin-bottom:10px;">
+  <label>
+    最大距離：
+    <span id="maxLabel">200</span> km
+    <br>
+    <input type="range" id="maxRange" min="0" max="1000" step="10" value="200">
+  </label>
+</div>
+
 
   
 <button id="searchBtn">検索する！</button>
@@ -604,14 +614,25 @@ companyTypeSelect.addEventListener('change', () => {
 })();
 
 // ===== 距離スライダー =====
-const distanceRange = document.getElementById('distanceRange');
-const distanceLabel = document.getElementById('distanceLabel');
+const minRange = document.getElementById('minRange');
+const maxRange = document.getElementById('maxRange');
+const minLabel = document.getElementById('minLabel');
+const maxLabel = document.getElementById('maxLabel');
 
-distanceLabel.textContent = distanceRange.value;
+function syncDistanceLabel() {
+  // 逆転防止
+  if (Number(minRange.value) > Number(maxRange.value)) {
+    maxRange.value = minRange.value;
+  }
+  minLabel.textContent = minRange.value;
+  maxLabel.textContent = maxRange.value;
+}
 
-distanceRange.addEventListener('input', () => {
-  distanceLabel.textContent = distanceRange.value;
-});
+minRange.addEventListener('input', syncDistanceLabel);
+maxRange.addEventListener('input', syncDistanceLabel);
+
+syncDistanceLabel();
+
 
 
 //距離を計算する関数
@@ -636,7 +657,9 @@ function calcDistanceKm(lat1, lon1, lat2, lon2) {
 // ===== ボタン押下時 =====
 document.getElementById('searchBtn').addEventListener('click', async () => {
   const resultDiv = document.getElementById('result');
+  const startSelect = document.getElementById('startSelect');
   const startG = startSelect.value;
+
 
   if(!startG || !stationGInfo[startG]) {
     resultDiv.textContent = '最寄駅を選択してください';
@@ -646,7 +669,9 @@ document.getElementById('searchBtn').addEventListener('click', async () => {
   mapLayers.forEach(l=>map.removeLayer(l));
   mapLayers = [];
 
-const maxDistance = Number(distanceRange.value);
+const minDist = Number(document.getElementById('minRange').value);
+const maxDist = Number(document.getElementById('maxRange').value);
+
 const startInfo = stationGInfo[startG];
 
 //目的地を探す
@@ -661,7 +686,8 @@ const candidateGoals = allG.filter(g => {
     info.lat, info.lon
   );
 
-  if (dist > maxDistance) return false;
+if (dist < minDist || dist > maxDist) return false;
+
 
   const edges = adj[g] || [];
   return edges.some(edge => allowedCompanies.includes(edge.company));
